@@ -277,7 +277,7 @@ protected:
   Int_t NZ;  
   double sumW;
   double m_lb;
-  double m_pi;
+  double m_K;
   double m_p;
   double m_jpsi;
 

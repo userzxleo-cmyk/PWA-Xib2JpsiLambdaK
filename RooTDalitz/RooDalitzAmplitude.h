@@ -349,7 +349,7 @@ class RooDalitzAmplitude : public RooAbsPdf {
     double sumW;
     double sumW_data;
     float m_lb;
-    float m_pi;
+    float m_K;
     float m_p;
     float m_jpsi;
     float m_chic1;
