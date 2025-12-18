@@ -41,7 +41,7 @@ namespace Execution{
             memory_manager.create("Z_cosTheta_Z","Z_cosTheta_Z",-1,1),
             memory_manager.create("Z_cosTheta_Jpsi","Z_cosTheta_Jpsi",-1,1),
             memory_manager.create("cosTheta_p","cosTheta_p",-1,1),
-            memory_manager.create("phipi","phipi",-TMath::Pi(), TMath::Pi()),
+            memory_manager.create("phiK","phiK",-TMath::Pi(), TMath::Pi()),
             memory_manager.create("phiMu","phiMu",-TMath::Pi(), TMath::Pi()),
             memory_manager.create("Z_phiZ","Z_phiZ",-TMath::Pi(), TMath::Pi()),
             memory_manager.create("Z_phiJpsi","Z_phiJpsi",-TMath::Pi(), TMath::Pi()),

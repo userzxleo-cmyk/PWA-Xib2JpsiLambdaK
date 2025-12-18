@@ -176,7 +176,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     std::cout << "GPU defined " << std::endl;
 #endif
     m_lb = 5.61951;
-    m_pi = 0.13957039;
+    m_K = 0.493677;
     m_p = 0.938272046;
     m_jpsi = 3.096916;
     m_chic1 = 3.51067;
@@ -330,7 +330,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         costheta = ((RooAbsReal *)row->find("cosTheta_Lb"))->getVal();
         costheta1 = ((RooAbsReal *)row->find("cosTheta_L"))->getVal();
         costheta2 = ((RooAbsReal *)row->find("cosTheta_Jpsi"))->getVal();
-        phi1 = ((RooAbsReal *)row->find("phipi"))->getVal();
+        phi1 = ((RooAbsReal *)row->find("phiK"))->getVal();
         phi2 = ((RooAbsReal *)row->find("phiMu"))->getVal();
         costhetaB = ((RooAbsReal *)row->find("Z_cosTheta_Lb"))->getVal();
         costhetaZ = ((RooAbsReal *)row->find("Z_cosTheta_Z"))->getVal();
@@ -421,7 +421,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     smcdata->SetBranchAddress("cosTheta_L", &costheta1);
     smcdata->SetBranchAddress("cosTheta_Jpsi", &costheta2);
     //
-    smcdata->SetBranchAddress("phipi", &phi1);
+    smcdata->SetBranchAddress("phiK", &phi1);
     smcdata->SetBranchAddress("phiMu", &phi2);
     smcdata->SetBranchAddress("Z_cosTheta_Lb", &costhetaB);
     smcdata->SetBranchAddress("Z_cosTheta_Z", &costhetaZ);
@@ -542,7 +542,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const RooDalitzAmplitude &other, const ch
       _bprod(other._bprod), _selfscatter(other._selfscatter), _sa3(other._sa3), _sp3(other._sp3),
       _mynll(other._mynll), _mypnalty(other._mypnalty), _kmchanged(other._kmchanged), NR(other.NR),
       NZ(other.NZ), NX(other.NX), sumW(other.sumW), sumW_data(other.sumW_data), m_lb(other.m_lb),
-      m_pi(other.m_pi), m_p(other.m_p), m_jpsi(other.m_jpsi), m_chic1(other.m_chic1) {
+      m_K(other.m_K), m_p(other.m_p), m_jpsi(other.m_jpsi), m_chic1(other.m_chic1) {
     int n = PDLZ->size();
     std::cout << "new PDLZ size " << n << std::endl;
     //  pdlz = other.pdlz;
@@ -771,7 +771,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const RooDalitzAmplitude &other, const ch
 }
 
 Bool_t RooDalitzAmplitude::kine_limits(float mpp) const {
-    if (mpp < m_pi + m_p)
+    if (mpp < m_K + m_p)
         return false;
     if (mpp > m_lb - m_jpsi)
         return false;
@@ -779,13 +779,13 @@ Bool_t RooDalitzAmplitude::kine_limits(float mpp) const {
 }
 
 Bool_t RooDalitzAmplitude::kine_limitsZ(float mjpsip) const {
-    if ((mjpsip < m_jpsi + m_p) || (m_lb < mjpsip + m_pi))
+    if ((mjpsip < m_jpsi + m_p) || (m_lb < mjpsip + m_K))
         return false;
     return true;
 }
 
 Bool_t RooDalitzAmplitude::kine_limitsX(float mjpsipi) const {
-    if ((mjpsipi < m_jpsi + m_pi) || (m_lb < mjpsipi + m_p))
+    if ((mjpsipi < m_jpsi + m_K) || (m_lb < mjpsipi + m_p))
         return false;
     return true;
 }
@@ -887,7 +887,7 @@ void RooDalitzAmplitude::storeLineshape(const TString path) const {
     int n_points = 4096;
     std::vector<float> h_mppi(n_points);
     for (size_t i = 0; i < n_points; i++) {
-        h_mppi[i] = (m_pi + m_p + i * (m_lb - m_jpsi - m_pi - m_p) / n_points);
+        h_mppi[i] = (m_K + m_p + i * (m_lb - m_jpsi - m_K - m_p) / n_points);
     }
 
     std::vector<float> h_KM_real(n_points * nLz);
@@ -1361,7 +1361,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     smcdata->SetBranchAddress("cosTheta_Lb", &costheta);
     smcdata->SetBranchAddress("cosTheta_L", &costheta1);
     smcdata->SetBranchAddress("cosTheta_Jpsi", &costheta2);
-    smcdata->SetBranchAddress("phipi", &phi1);
+    smcdata->SetBranchAddress("phiK", &phi1);
     smcdata->SetBranchAddress("phiMu", &phi2);
 
     smcdata->SetBranchAddress("Z_cosTheta_Lb", &costhetaB);
@@ -1415,7 +1415,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
         tree->Branch("sw_old", &sw, "sw_old/D");
         tree->Branch("cosTheta_Lb", &costheta, "cosTheta_Lb/D");
         tree->Branch("cosTheta_Jpsi", &costheta2, "cosTheta_Jpsi/D");
-        tree->Branch("phipi", &phi1, "phipi/D");
+        tree->Branch("phiK", &phi1, "phiK/D");
         tree->Branch("phiMu", &phi2, "phiMu/D");
         tree->Branch("Z_cosTheta_Lb", &costhetaB, "Z_cosTheta_Lb/D");
         tree->Branch("Z_cosTheta_Jpsi", &costhetaPsi, "Z_cosTheta_Jpsi/D");
@@ -1648,7 +1648,7 @@ void RooDalitzAmplitude::genToyNoACC(const char *name) const {
 
 
     float vrnd[6];
-    float mmin = m_pi+m_p;
+    float mmin = m_K+m_p;
     float mmax = m_lb-m_jpsi;
 
     for(int i=0; i<1e6; ++i) {
@@ -1665,7 +1665,7 @@ void RooDalitzAmplitude::genToyNoACC(const char *name) const {
       Jpsihh_dlz *xdlz = new Jpsihh_dlz();
 
       filldlz(*xdlz, mppi, costheta, costheta1, costheta2, phi1, phi2);
-      w =  GetAmp2s(*xdlz)*getp(m_lb, m_jpsi, mppi)*getp(mppi, m_p, m_pi);
+      w =  GetAmp2s(*xdlz)*getp(m_lb, m_jpsi, mppi)*getp(mppi, m_p, m_K);
       tree->Fill();
       delete xdlz;
     }
@@ -1730,7 +1730,7 @@ void RooDalitzAmplitude::MakeSpline(RooArgList ires) const {
         im[i] = ((RooAbsReal &)ires[noffset + (i) * 3 + 1]).getVal();
         // if(i==0) std::cout << "Spline x0 " << x[i] << std::endl;
     }
-    double xmin(m_pi + m_p - 0.002), xmax(m_lb - m_jpsi + 0.002);
+    double xmin(m_K + m_p - 0.002), xmax(m_lb - m_jpsi + 0.002);
     _sa3 = TSpline3("_sa3", x, re, nsp, "", xmin, xmax);
     _sp3 = TSpline3("_sp3", x, im, nsp, "", xmin, xmax);
 }
@@ -1746,7 +1746,7 @@ void RooDalitzAmplitude::MakeSplineZ(RooArgList ires) const {
         im[i] = ((RooAbsReal &)ires[noffset + (i) * 3 + 1]).getVal();
         //    if(i==0) std::cout << "Spline x0 " << x[i] << std::endl;
     }
-    double xmin(m_jpsi + m_p - 0.002), xmax(4.6); // xmax(m_lb-m_pi+0.002);
+    double xmin(m_jpsi + m_p - 0.002), xmax(4.6); // xmax(m_lb-m_K+0.002);
     _sa3 = TSpline3("_sa3", x, re, nsp, "", xmin, xmax);
     _sp3 = TSpline3("_sp3", x, im, nsp, "", xmin, xmax);
 }
@@ -1770,7 +1770,7 @@ void RooDalitzAmplitude::ModelIndependentWave3(float *fPoly,
     if (fNp <= 0)
         return;
 
-    float fXmin = m_p + m_pi - 0.002; // 1.513;//1.43;//((RooAbsReal&)res24[3]).getVal();
+    float fXmin = m_p + m_K - 0.002; // 1.513;//1.43;//((RooAbsReal&)res24[3]).getVal();
     float fXmax =
         m_lb - m_jpsi + 0.002; // 2.185;//4.416;//5.03;//2.53;//((RooAbsReal&)res24[4]).getVal();
 
@@ -1832,7 +1832,7 @@ void RooDalitzAmplitude::ModelIndependentWave(float *fPoly, float x, float &Rea,
 
     float fXmin = m_jpsi + m_p - 0.002; // 1.513;//1.43;//((RooAbsReal&)res24[3]).getVal();
     float fXmax =
-        4.6; // m_lb-m_pi+0.002;//2.185;//4.416;//5.03;//2.53;//((RooAbsReal&)res24[4]).getVal();
+        4.6; // m_lb-m_K+0.002;//2.185;//4.416;//5.03;//2.53;//((RooAbsReal&)res24[4]).getVal();
 
     if (x < fXmin)
         return;
@@ -5917,7 +5917,7 @@ Float_t RooDalitzAmplitude::BTerm(Float_t Spin, Float_t mpp, Float_t mr) const {
     float pB0 = pB;
     // for NR
     if (mr < -0.) {
-        float mmin = m_pi + m_p;
+        float mmin = m_K + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff = (mmin + mmax) / 2.;
         pB0 = getp(m_lb, m_jpsi, mreff);
@@ -5925,7 +5925,7 @@ Float_t RooDalitzAmplitude::BTerm(Float_t Spin, Float_t mpp, Float_t mr) const {
     if (mr > 1e-10 && mr + m_jpsi < m_lb)
         pB0 = getp(m_lb, m_jpsi, mr);
     if (mr + m_jpsi > m_lb) {
-        float mmin = m_pi + m_p;
+        float mmin = m_K + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff =
             mmin + 0.5 * (mmax - mmin) * (1.0 + tanh((mr - (mmin + mmax) / 2.) / (mmax - mmin)));
@@ -5950,16 +5950,16 @@ Float_t RooDalitzAmplitude::BTermZ(Float_t Spin, Float_t mpp, Float_t mr) const 
     if (LB < 0)
         LB = 0;
 
-    float pB = getp(m_lb, m_pi, mpp);
+    float pB = getp(m_lb, m_K, mpp);
     float pB0 = pB;
     if (mr < -0.) {
         float mmin = m_jpsi + m_p;
-        float mmax = m_lb - m_pi;
+        float mmax = m_lb - m_K;
         float mreff = (mmin + mmax) / 2.;
-        pB0 = getp(m_lb, m_pi, mreff);
+        pB0 = getp(m_lb, m_K, mreff);
     }
-    if (mr > 1e-10 && mr + m_pi < m_lb)
-        pB0 = getp(m_lb, m_pi, mr);
+    if (mr > 1e-10 && mr + m_K < m_lb)
+        pB0 = getp(m_lb, m_K, mr);
 
     c = (LINESHAPE_LBPLUSONE) ? F_BW(_FFB, LB + 1, pB, pB0) * pow(pB / m_lb, LB) * (pB / pB0)
                               : F_BW(_FFB, LB, pB, pB0) * pow(pB / m_lb, LB);
@@ -6179,7 +6179,7 @@ cnum RooDalitzAmplitude::get_b(cnum alpha, cnum p23) const {
     cnum unit2(2, 0);
     cnum unit4(4, 0);
     cnum p12(m_lb, 0);
-    cnum p13(m_pi, 0);
+    cnum p13(m_K, 0);
 
     cnum m2(m_chic1, 0);
     cnum m3(m_p, 0);
@@ -6200,7 +6200,7 @@ cnum RooDalitzAmplitude::get_c(cnum alpha, cnum p23, float m_r, float gamma) con
     cnum unit2(2, 0);
     cnum unit4(4, 0);
     cnum p12(m_lb, 0);
-    cnum p13(m_pi, 0);
+    cnum p13(m_K, 0);
 
     cnum m1(m_r, -1 * gamma / 2.);
     cnum m2(m_chic1, 0);
@@ -6216,7 +6216,7 @@ cnum RooDalitzAmplitude::this_func(float alpha1, float p23_real, float m_r, floa
     cnum unit2(2, 0);
     cnum unit4(4, 0);
     cnum p12(m_lb, 0);
-    cnum p13(m_pi, 0);
+    cnum p13(m_K, 0);
 
     cnum m2(m_chic1, 0);
     cnum m3(m_p, 0);
@@ -6295,7 +6295,7 @@ bool RooDalitzAmplitude::BW_AMP(
     //  LB = 1; //changed by LM
     //}
     // float pB = getpB(mpp);
-    float pR = getp(mpp, m_p, m_pi);
+    float pR = getp(mpp, m_p, m_K);
     // For NR
     float pR0 = pR;
     if (m_r < -0.) // NR
@@ -6303,20 +6303,20 @@ bool RooDalitzAmplitude::BW_AMP(
         //  ampl_r = pow(pR,LR);
         //  ampl_i = 0;
         //  return true;
-        float mmin = m_pi + m_p;
+        float mmin = m_K + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff = (mmin + mmax) / 2.;
-        pR0 = getp(mreff, m_p, m_pi);
+        pR0 = getp(mreff, m_p, m_K);
     }
-    if (m_r > m_p + m_pi) {
-        pR0 = getp(m_r, m_p, m_pi); // sqrt(m_r*m_r-4*m2_pi)/2.;
+    if (m_r > m_p + m_K) {
+        pR0 = getp(m_r, m_p, m_K); // sqrt(m_r*m_r-4*m2_pi)/2.;
     }
-    if (m_r <= m_p + m_pi && m_r > 1e-10) {
-        float mmin = m_pi + m_p;
+    if (m_r <= m_p + m_K && m_r > 1e-10) {
+        float mmin = m_K + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff =
             mmin + 0.5 * (mmax - mmin) * (1.0 + tanh((m_r - (mmin + mmax) / 2.) / (mmax - mmin)));
-        pR0 = getp(mreff, m_p, m_pi);
+        pR0 = getp(mreff, m_p, m_K);
     }
     // float FB = F_BW(_FFB,LB,pB,pB0);
     float FR = F_BW(_FFR, LR, pR, pR0);
@@ -6329,7 +6329,7 @@ bool RooDalitzAmplitude::BW_AMP(
     float bw_r(0), bw_i(0);
     float gamma = gamma_r;
     // if(with_dep!=0) gamma = gamma_r*pow((pR/pR0),2*LR+1)*(m_r/mpp)*FR*FR;
-    if (m_r > m_p + m_pi) {
+    if (m_r > m_p + m_K) {
         gamma = gamma_r * pow((pR / pR0), 2 * LR + 1) * (m_r / mpp) * FR * FR;
     } else if (m_r < 1.43 && m_r > 0) {
         float msig = 1.18937;    // 1.192642;
@@ -6375,12 +6375,12 @@ bool RooDalitzAmplitude::BW_AMP(
     //  LB = 1; //changed by LM
     //}
     // float pB = getpB(mpp);
-    float pR = getp(mpp, m_p, m_pi);
+    float pR = getp(mpp, m_p, m_K);
     // For NR
 
     float pR0 = pR;
-    if (m_r > m_p + m_pi)
-        pR0 = getp(m_r, m_p, m_pi); // sqrt(m_r*m_r-4*m2_pi)/2.;
+    if (m_r > m_p + m_K)
+        pR0 = getp(m_r, m_p, m_K); // sqrt(m_r*m_r-4*m2_pi)/2.;
 
     // float FB = F_BW(_FFB,LB,pB,pB0);
     // take FR = 1.0;
@@ -6474,8 +6474,8 @@ bool RooDalitzAmplitude::BW_AMPZSMR(float m_r,
     float aa;
     //  float ph;
     float min = m_jpsi + m_p;
-    float max = m_lb - m_pi;
-    //  float min(2.*m_pi), max(m_bs-m_jpsi);
+    float max = m_lb - m_K;
+    //  float min(2.*m_K), max(m_bs-m_jpsi);
     float mbin = (max - min) / NN;
 
     float bw_i, bw_r;
@@ -6520,10 +6520,10 @@ bool RooDalitzAmplitude::BW_AMPX(
     ampl_r = 0;
     ampl_i = 0;
     float m2pp = mpp * mpp;
-    float pR = getp(mpp, m_pi, m_jpsi);
+    float pR = getp(mpp, m_K, m_jpsi);
     float pR0 = pR;
-    if (m_r > m_pi + m_jpsi)
-        pR0 = getp(m_r, m_pi, m_jpsi); // sqrt(m_r*m_r-4*m2_pi)/2.;
+    if (m_r > m_K + m_jpsi)
+        pR0 = getp(m_r, m_K, m_jpsi); // sqrt(m_r*m_r-4*m2_pi)/2.;
 
     // float FB = F_BW(_FFB,LB,pB,pB0);
     float FR = F_BW(_FFR, LR, pR, pR0);
@@ -6531,7 +6531,7 @@ bool RooDalitzAmplitude::BW_AMPX(
     float bw_r(0), bw_i(0);
     float gamma = gamma_r;
     // if(with_dep!=0) gamma = gamma_r*pow((pR/pR0),2*LR+1)*(m_r/mpp)*FR*FR;
-    if (m_r > m_pi + m_jpsi)
+    if (m_r > m_K + m_jpsi)
         gamma = gamma_r * pow((pR / pR0), 2 * LR + 1) * (m_r / mpp) * FR * FR;
     breit_wigner(m_r, gamma, m2pp, bw_r, bw_i);
     // charged mpp->mr
@@ -6880,18 +6880,18 @@ bool RooDalitzAmplitude::Revised_KMAMP(
     //  switch(iType) {
     //  case 0: //k*
     m1 = m_p;
-    m2 = m_pi;
+    m2 = m_K;
     m3 = m_jpsi;
     m1_0 = m_p;
-    m2_0 = m_pi;
+    m2_0 = m_K;
     m3_0 = m_jpsi;
     if (isPcChain) {
         m1 = m_jpsi;
         m2 = m_p;
-        m3 = m_pi;
+        m3 = m_K;
         m1_0 = m_jpsi;
         m2_0 = m_p;
-        m3_0 = m_pi;
+        m3_0 = m_K;
     }
     //    break;
     //  }
@@ -6988,10 +6988,10 @@ float RooDalitzAmplitude::KMatrixTerm(
     //  switch(iType) {
     //  case 0: //L*
     m1 = m_p;
-    m2 = m_pi;
+    m2 = m_K;
     m3 = m_jpsi;
     m1_0 = m_p;
-    m2_0 = m_pi;
+    m2_0 = m_K;
     m3_0 = m_jpsi;
     //    break;
     //
