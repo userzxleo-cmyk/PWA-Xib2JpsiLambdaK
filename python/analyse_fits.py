@@ -88,7 +88,7 @@ def parse_log(filepath):
     last_first_derivative_line = 0
     N = 0
 
-    with open(args.log, "r") as file:
+    with open(filepath, "r") as file:
         lines = file.readlines()
 
     for line in lines:

@@ -32,9 +32,9 @@ and these intermediate varaibles are not changed
 */
 
 struct Jpsihh_dlz {
-    float mppi;
+    float mpk;
     float mjpsip;
-    float mjpsipi;
+    float mjpsik;
     float w;
     Float_t ARe[2][2][6];
     Float_t AIm[2][2][6];
@@ -207,7 +207,7 @@ class RooDalitzAmplitude : public RooAbsPdf {
     Float_t getFBW2(float M2, float m1, float m2, int L) const;
     TComplex getFBW2_complexMass(float M2, TComplex m1, TComplex m2, int L) const;
     void filldlz(Jpsihh_dlz &dlz,
-                 Double_t xmppi,
+                 Double_t xmpk,
                  Double_t,
                  Double_t xcostheta1,
                  Double_t xcostheta2,
@@ -230,7 +230,7 @@ class RooDalitzAmplitude : public RooAbsPdf {
                  Double_t xphiMu_X, // Zcs
                  Double_t xcosthetap_X,
                  Double_t xalphaMu_X,
-                 Double_t xmjpsipi, // Zcs
+                 Double_t xmjpsik, // Zcs
                  Double_t w = -1001.) const;
     Bool_t kine_limits(float mpp) const;
     Bool_t kine_limitsZ(float mpp) const;
@@ -252,7 +252,7 @@ class RooDalitzAmplitude : public RooAbsPdf {
     // bool checkchange() const;
     void ModelIndependentWave(float *ampxxx, float ms, float &Rea, float &Ima) const;
     void ModelIndependentWave3(float *ampxxx, float ms, float &Rea, float &Ima) const;
-    // void CalWave(float mppi, int index, float &sum_re, float &sum_im) const;
+    // void CalWave(float mpk, int index, float &sum_re, float &sum_im) const;
     cnum get_b(cnum alpha, cnum p23) const;
     cnum get_c(cnum alpha, cnum p23, float m_r, float gamma) const;
     cnum this_func(float alpha1, float p23_real, float m_r, float gamma) const;
@@ -349,7 +349,7 @@ class RooDalitzAmplitude : public RooAbsPdf {
     double sumW;
     double sumW_data;
     float m_lb;
-    float m_pi;
+    float m_K;
     float m_p;
     float m_jpsi;
     float m_chic1;
