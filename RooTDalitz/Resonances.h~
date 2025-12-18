@@ -1,0 +1,36 @@
+#ifndef RESONANCES
+#define RESONANCES
+#define NUMSP 20
+#define NUMSPZ 11
+#define NKMC 4
+const int nset  = 6;
+
+const float _smear_nsigmas = 10;
+const float _smear_nbins = 30;
+const float _mres0 = -0.134064 ;
+const float _mres1 =  0.0599014;
+const float _mres2 = -0.00655841;
+
+//set Kmatrix channel masses
+const float Km1[5]={0.938272046, 2.008555, 2.008555, 1.86719,  1.86719};
+const float Km2[5]={3.096916,    2.453435, 2.517955, 2.453435, 2.517955};
+
+const int Npmax = 4;
+enum{
+  MASS = 0, WIDTH, SPIN, LRESON, TYPE, PARITY
+};
+enum {
+  BREITWIGNER = 1,
+  FLATTE,  
+  MODELINDEPENDENT,
+  CHEBYCHEV,
+  MODIFIEDFLATTE,
+  CUSP,
+  TRIANGLE,
+  PARTIALWAVE = 120,
+  KMATRIX = 240,
+  REVISEDKMATRIX = 360
+};
+
+
+#endif //RESONANCES

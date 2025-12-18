@@ -1,0 +1,77 @@
+mkp : 
+  nBins : 100
+  xmin : 1.4
+  xmax : 2.6
+  xlabel : "$m(Kp)$ [GeV]"
+
+mjpsip : 
+  nBins : 100
+  xmin : 4.0
+  xmax : 5.2
+  xlabel : "$m(\\psi p)$ [GeV]"
+
+cosTheta_L : 
+  nBins : 100
+  xmin : -1.0
+  xmax : 1.0
+  xlabel : "cos($\\theta_{\\Lambda^{*}}$)"
+
+Z_cosTheta_Z : 
+  nBins : 100
+  xmin : -1.0
+  xmax : 1.0
+  xlabel : "cos($\\theta_{P_{c}}$) ($P_{c}$)"
+
+cosTheta_Jpsi : 
+  nBins : 100
+  xmin : -1.0
+  xmax : 1.0
+  xlabel : "cos($\\theta_{\\psi}$)"
+
+Z_cosTheta_Jpsi : 
+  nBins : 100
+  xmin : -1.0
+  xmax : 1.0
+  xlabel : "cos($\\theta_{\\psi}$) ($P_{c}$)"
+
+phiK : 
+  nBins : 100
+  xmin : -3.14159
+  xmax : 3.14159
+  xlabel : "$\\phi_{K}$"
+
+Z_phiJpsi : 
+  nBins : 100
+  xmin : -3.14159
+  xmax : 3.14159
+  xlabel : "$\\phi_{\\psi}$ ($P_{c}$)"
+
+phiMu : 
+  nBins : 100
+  xmin : -3.14159
+  xmax : 3.14159
+  xlabel : "$\\phi_{\\mu}$"
+
+Z_phiMu : 
+  nBins : 100
+  xmin : -3.14159
+  xmax : 3.14159
+  xlabel : "$\\phi_{\\mu}$ ($P_{c}$)"
+
+Z_phiZ : 
+  nBins : 100
+  xmin : -3.14159
+  xmax : 3.14159
+  xlabel : "$\\phi_{P_{c}}$ ($P_{c}$)"
+
+cosTheta_Lb : 
+  nBins : 100
+  xmin : -1.0
+  xmax : 1.0
+  xlabel : "cos($\\theta_{\\Lambda_{b}}$)"
+
+Z_cosTheta_Lb : 
+  nBins : 100
+  xmin : -1.0
+  xmax : 1.0
+  xlabel : "cos($\\theta_{\\Lambda_{b}}$) ($P_{c}$)"

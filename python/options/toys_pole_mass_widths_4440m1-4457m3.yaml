@@ -1,0 +1,59 @@
+pole4312 :
+  m_MeV :
+    min : 4315
+    max : 4325
+  Γ_MeV :
+    min : 2
+    max : 20
+  # SigmacD:
+  #   min : 2
+  #   max : 5
+  # SigmacDst:
+  #   min : 0.2
+  #   max : 0.7
+  # a:
+  #   min : -6
+  #   max : 0
+  # r:
+  #   min : 0.4
+  #   max : 0.6
+
+pole4440 :
+  m_MeV :
+    min : 4436
+    max : 4448
+  Γ_MeV :
+    min : 10
+    max : 35
+  # SigmacD:
+  #   min : 1
+  #   max : 1.3
+  # SigmacDst:
+  #   min : 0.3
+  #   max : 0.9
+  # a:
+  #   min : -0.5
+  #   max : 0.8
+  # r:
+  #   min : 0
+  #   max : 30
+
+pole4457 :
+  m_MeV :
+    min : 4455
+    max : 4459
+  Γ_MeV :
+    min : 0
+    max : 9
+  # SigmacD:
+  #   min : 1.2
+  #   max : 2.2
+  # SigmacDst:
+  #   min : -50
+  #   max : 100
+  # a:
+  #   min : -2.4
+  #   max : -1.4
+  # r:
+  #   min : -0.2
+  #   max : 0.8

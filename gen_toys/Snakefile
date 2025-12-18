@@ -1,0 +1,582 @@
+SIGNAL_START_SEED = 0
+SIGNAL_END_SEED = 10500 # At least 200 toy signal
+
+BACKGROUND_START_SEED = 100000
+BACKGROUND_END_SEED = 100200 # At least 400 toy signal
+
+TRAINING_START_SEED = 200000
+TRAINING_END_SEED = 200004
+
+TOYMC_START_SEED = 300000
+TOYMC_END_SEED = 301600 # At least 200 toy MC
+
+N_SIGNAL_AVERAGE = 251886
+N_BACKGROUND_AVERAGE = 143249
+N_TOYMC_AVERAGE = 2555033
+
+AMP2S_SEED_OFFSET = 400000
+
+# We might generate more jobs than 100 for each hit-and-reject stage, 
+# but 100 is enough to sample the hit-and-reject maximum.
+# Any events beyond the 100 sample maximum are usually in the very long tails, 
+# which are an insignificantly tiny amount.
+NJOBS_FOR_MAX = 100
+NJOBS_FOR_EFFICIENCY_PLOT = 4
+NJOBS_FOR_PULLS_PLOT = 15
+NJOBS_FOR_AMP2S_PLOT = 50
+
+rule all:
+    input:
+        expand("output/{efficiency_type}/{jp_config}/token", efficiency_type=["efficiency", "GBweight"], jp_config=["4440m1-4457m3", "4440m3-4457m1"]),
+        expand("output/toymc/{efficiency_type}/token", efficiency_type=["efficiency", "GBweight"]),
+        expand("create_efficiency/models/GBreweight_model{setting}.pickle", setting=range(8)),
+        "create_efficiency/models/GBreweight_modelLsChainOnly.pickle",
+        expand("create_efficiency/plots/distributions_efficiency_vs_GBweight{setting}.pdf", setting=range(8)),
+        expand("create_amplitude_weight/plots/distributions_{efficiency_type}_{jp_config}.pdf", efficiency_type=["efficiency", "GBweight"], jp_config=["4440m1-4457m3", "4440m3-4457m1"]),
+        "create_efficiency/plots/pulls_efficiency_vs_GBweight.json",
+        "create_efficiency/plots/pulls_efficiency_vs_GBweight.pdf"
+
+
+def get_tempfile_dir():
+    # return os.path.join("/tmp", os.getlogin())
+    return "workspace/temp"
+
+rule generate_phsp_toys:
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "phsp_toys/phsp_{seed}.root"))
+    log: 
+        stdout = "logs/phsp_toys/gentoy_{seed}.log"
+    wildcard_constraints:
+        seed = "\d+"
+    run:
+        os.makedirs(os.path.dirname(output.nTuple), exist_ok=True)
+        shell("root -l -q \'phsp_toys/gentoy_formhj.C({wildcards.seed}, \"{output.nTuple}\")\' > {log.stdout}")
+
+rule attach_angles:
+    input:
+        nTuple = rules.generate_phsp_toys.output.nTuple
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "phsp_toys/unfiltered_phsp_withangles_{seed}.root"))
+    log: 
+        stdout = "logs/phsp_toys/attach_angles_{seed}.log"
+    run:
+        shell("root -b -l -e \'.L phsp_toys/tree.C\' -e \'.x phsp_toys/create_angle_formhj.C(\"{input.nTuple}\", \"{output.nTuple}\")\' -e \'.q\' > {log.stdout}")
+
+rule kinematic_filter:
+    input:
+        nTuple = rules.attach_angles.output.nTuple,
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "phsp_toys/phsp_withangles_{seed}.root"))
+    run:
+        shell("python phsp_toys/kinematic_filter.py --input {input.nTuple} --output {output.nTuple}")
+
+rule attach_efficiencies:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "efficiency/phsp_withangles_{seed}.root"))
+    log: 
+        stdout = "logs/create_efficiency/create_efficiency_{seed}.log"
+    run:
+        os.makedirs(os.path.dirname(output.nTuple), exist_ok=True)
+        shell("../moments/For_eff/bin/Addeff_forJPtoy {input.nTuple} {output.nTuple} /nishome/dtou/disk401/Lb2JpsipK/lb2jpsipk_run12_aman/Fit_fullPHSP/mcsw.root  /nishome/dtou/disk401/Lb2JpsipK/lb2jpsipk_run12_aman/Fit_fullPHSP/sPlot.root > {log.stdout}")
+
+rule train_reweighter:
+    input:
+        toys = expand(os.path.join(get_tempfile_dir(), "phsp_toys/phsp_withangles_{seed}.root"), seed=range(TRAINING_START_SEED, TRAINING_END_SEED)),
+        yaml = "create_efficiency/options/GBreweight{setting}.yaml",
+        MC = "/nishome/wangmz/workspace/Lb2JpsipK/lb2jpsipk_run12_aman/for_Pc4312JP/Fit_fullPHSP/mcsw.root"
+    output:
+        model = "create_efficiency/models/GBreweight_model{setting}.pickle"
+    log:
+        stdout = "logs/create_efficiency/train_GBreweight{setting}.log"
+    run:
+        shell("python create_efficiency/train_GBreweighter.py --MC {input.MC} --toys {input.toys} --yaml {input.yaml} --output_path {output.model} > {log.stdout}")
+
+rule apply_reweighter:
+    input:
+        model = rules.train_reweighter.output.model,
+        yaml = rules.train_reweighter.input.yaml,
+        nTuple = rules.kinematic_filter.output.nTuple
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweight{setting}.root"))
+    log:
+        stdout = "logs/create_efficiency/apply_GBreweight_{seed}_GBweight{setting}.log"
+    run:
+        shell("python create_efficiency/apply_GBreweighter.py --model_path {input.model} --input_path {input.nTuple} --output_path {output.nTuple} --yaml {input.yaml} > {log.stdout}")
+
+rule compare_efficiency_GBweight_distributions:
+    input:
+        MC = "/nishome/wangmz/workspace/Lb2JpsipK/lb2jpsipk_run12_aman/for_Pc4312JP/Fit_fullPHSP/mcsw.root",
+        nTuple = expand(rules.kinematic_filter.output.nTuple, seed=range(NJOBS_FOR_EFFICIENCY_PLOT)),
+        efficiency = expand(rules.attach_efficiencies.output.nTuple, seed=range(NJOBS_FOR_EFFICIENCY_PLOT)),
+        GBweight = expand(os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweight{{setting}}.root"), seed=range(NJOBS_FOR_EFFICIENCY_PLOT)),
+        yaml = "create_efficiency/options/compare_distributions.yaml"
+    output:
+        plot = "create_efficiency/plots/distributions_efficiency_vs_GBweight{setting}.pdf"
+    run:
+        shell("python create_efficiency/compare_distributions.py --mcsw {input.MC} --nTuples {input.nTuple} --efficiency {input.efficiency} --GBweight {input.GBweight} --yaml {input.yaml} --output_path {output.plot}")
+
+rule get_per_tuple_maximum_efficiency:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        efficiency = rules.attach_efficiencies.output.nTuple
+    output:
+        json = temp(os.path.join(get_tempfile_dir(), "maximum_efficiency/phsp_{seed}.json"))
+    run:
+        shell("python create_efficiency/get_maximum_weight.py --input {input.nTuple} --friends {input.efficiency} --output {output.json} --hit_and_reject_weight sw eff")
+
+rule get_per_tuple_maximum_GBweight:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        GBweight = os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweight7.root")
+    output:
+        json = temp(os.path.join(get_tempfile_dir(), "maximum_GBweight/phsp_{seed}.json"))
+    run:
+        shell("python create_efficiency/get_maximum_weight.py --input {input.nTuple} --friends {input.GBweight} --output {output.json} --hit_and_reject_weight sw GBweight")
+
+rule get_per_tuple_maximum_GBweight_LsChainOnly:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        GBweight = os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweightLsChainOnly.root")
+    output:
+        json = temp(os.path.join(get_tempfile_dir(), "maximum_GBweight/phsp_{seed}_LsChainOnly.json"))
+    run:
+        shell("python create_efficiency/get_maximum_weight.py --input {input.nTuple} --friends {input.GBweight} --output {output.json} --hit_and_reject_weight sw GBweight")
+
+def save_maximum(list_of_json, output_path):
+    import json
+
+    per_tuple_maximums = list()
+    for path in list_of_json:
+        with open(path, "r") as file:
+            maximum = json.load(file)["maximum"]
+            per_tuple_maximums.append(maximum)
+    overall_maximum = max(per_tuple_maximums)
+
+    dump_dict = { "maximum" : overall_maximum, "values" : per_tuple_maximums }
+    with open(output_path, "w") as file:
+        file.write(json.dumps(dump_dict, indent=2))
+        file.close()
+
+rule get_maximum_efficiency:
+    input:
+        json = expand(rules.get_per_tuple_maximum_efficiency.output.json, seed=range(NJOBS_FOR_MAX)),
+    output:
+        json = "create_efficiency/options/maximum_efficiency.json"
+    priority: 50
+    run:
+        save_maximum(input.json, output.json)
+
+rule get_maximum_GBweight:
+    input:
+        json = expand(rules.get_per_tuple_maximum_GBweight.output.json, seed=range(NJOBS_FOR_MAX)),
+    output:
+        json = "create_efficiency/options/maximum_GBweight.json"
+    priority: 50
+    run:
+        save_maximum(input.json, output.json)
+
+rule get_maximum_GBweight_LsChainOnly:
+    input:
+        json = expand(rules.get_per_tuple_maximum_GBweight_LsChainOnly.output.json, seed=range(NJOBS_FOR_MAX)),
+    output:
+        json = "create_efficiency/options/maximum_GBweight_LsChainOnly.json"
+    priority: 50
+    run:
+        save_maximum(input.json, output.json)
+
+rule hit_and_reject_efficiency:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        efficiency = rules.attach_efficiencies.output.nTuple,
+        json = rules.get_maximum_efficiency.output.json
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "hit_and_reject_tuples/efficiency/phsp_{seed}.root"))
+    log:
+        stdout = "logs/create_efficiency/hit_and_reject_efficiency_{seed}.root"
+    run:
+        shell("python create_efficiency/hit_and_reject.py --input {input.nTuple} --friends {input.efficiency} --output {output.nTuple} --seed {wildcards.seed} --hit_and_reject_weight sw eff --max_weight_json {input.json} > {log.stdout}")
+
+rule hit_and_reject_GBweight:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        GBweight = os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweight7.root"),
+        json = rules.get_maximum_GBweight.output.json
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "hit_and_reject_tuples/GBweight/phsp_{seed}.root"))
+    log:
+        stdout = "logs/create_efficiency/hit_and_reject_GBweight_{seed}.root"
+    run:
+        shell("python create_efficiency/hit_and_reject.py --input {input.nTuple} --friends {input.GBweight} --output {output.nTuple} --seed {wildcards.seed} --hit_and_reject_weight sw GBweight --max_weight_json {input.json} > {log.stdout}")
+
+use rule hit_and_reject_GBweight as hit_and_reject_GBweight_LsChainOnly with:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        GBweight = os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweightLsChainOnly.root"),
+        json = rules.get_maximum_GBweight_LsChainOnly.output.json
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "hit_and_reject_tuples/GBweight_LsChainOnly/phsp_{seed}.root"))
+    log:
+        stdout = "logs/create_efficiency/hit_and_reject_GBweight_LsChainOnly_{seed}.root"
+
+rule calculate_efficiency_GBweight_pulls:
+    input:
+        MC = "/nishome/wangmz/workspace/Lb2JpsipK/lb2jpsipk_run12_aman/for_Pc4312JP/Fit_fullPHSP/mcsw.root",
+        efficiency = expand(rules.hit_and_reject_efficiency.output.nTuple, seed=range(NJOBS_FOR_PULLS_PLOT)),
+        GBweight = expand(rules.hit_and_reject_GBweight_LsChainOnly.output.nTuple, seed=range(NJOBS_FOR_PULLS_PLOT, 2*NJOBS_FOR_PULLS_PLOT)),
+        yaml = "create_efficiency/options/compare_pulls.yaml"
+    output:
+        pulls = "create_efficiency/plots/pullz.npz"
+    run:
+        shell("python create_efficiency/store_pulls.py --mcsw {input.MC} --efficiency {input.efficiency} --GBweight {input.GBweight} --yaml {input.yaml} --nbins 4000 --output_path {output.pulls}")
+
+rule compare_efficiency_GBweight_pulls:
+    input:
+        yaml = "create_efficiency/options/compare_pulls.yaml",
+        pulls = rules.calculate_efficiency_GBweight_pulls.output.pulls
+    output:
+        json = "create_efficiency/plots/pulls_efficiency_vs_GBweight.json",
+        plot = "create_efficiency/plots/pulls_efficiency_vs_GBweight.pdf"
+    run:
+        shell("python create_efficiency/compare_pulls.py --pulls_npz {input.pulls} --yaml {input.yaml} --json_path {output.json} --plot_path {output.plot}")
+
+rule create_amplitude_weight:
+    input:
+        nTuple = os.path.join(get_tempfile_dir(), "hit_and_reject_tuples/{efficiency_type}/phsp_{seed}.root"),
+        fitresult = "fitresults/default_{jp_config}-4312m1-4600p3.root"
+    output:
+        amp2s = temp(os.path.join(get_tempfile_dir(), "amp2s/{efficiency_type}/{jp_config}/phsp_{seed}.root"))
+    log:
+        stdout = "logs/create_amplitude_weight/amplitude_weight_{efficiency_type}_{jp_config}/phsp_{seed}.root"
+    # resources:
+    #     gpu=1
+    run:
+        is_4440m1 = wildcards.jp_config == "4440m1-4457m3"
+        Pc4440_option = "1,-1" if is_4440m1 else "3,-1"
+        Pc4457_option = "3,-1" if is_4440m1 else "1,-1"
+        Pc_args = f"--Pc4440 {Pc4440_option} --Pc4457 {Pc4457_option} --Pc4312 1,-1 --Pc4500 3,1"
+        io_args = f"-r {input.fitresult} -i {input.nTuple} -o {output.amp2s}"
+        gpu_id = int(wildcards.seed) % 4
+
+        os.makedirs(os.path.dirname(output.amp2s), exist_ok=True)
+        shell("../bin/StoreAmp2s{gpu_id} {Pc_args} {io_args} > {log.stdout}")
+
+# Copy temporary files in /tmp to somewhere more permanent
+# Mainly for background
+rule copy_background_tuples:
+    input:
+        nTuple = os.path.join(get_tempfile_dir(), "hit_and_reject_tuples/{efficiency_type}/phsp_{seed}.root")
+    output:
+        nTuple = "create_efficiency/hit_and_reject_tuples/{efficiency_type}/phsp_{seed}.root"
+    run:
+        import shutil
+        os.makedirs(os.path.dirname(output.nTuple), exist_ok=True)
+        shutil.copy(input.nTuple, output.nTuple)
+
+rule plot_amp2s_distributions:
+    input:
+        nTuple = expand(os.path.join(get_tempfile_dir(), "hit_and_reject_tuples/{{efficiency_type}}/phsp_{seed}.root"), seed=range(NJOBS_FOR_AMP2S_PLOT)),
+        amp2s = expand(os.path.join(get_tempfile_dir(), "amp2s/{{efficiency_type}}/{{jp_config}}/phsp_{seed}.root"), seed=range(NJOBS_FOR_AMP2S_PLOT)),
+        real_data = "../Fit_fullPHSP/sPlot.root",
+        yaml = "create_amplitude_weight/options/compare_distributions.yaml"
+    output:
+        plot = "create_amplitude_weight/plots/distributions_{efficiency_type}_{jp_config}.pdf"
+    run:
+        shell("python create_amplitude_weight/compare_distributions.py --data {input.real_data} --nTuples {input.nTuple} --amp2s {input.amp2s} --yaml {input.yaml} --output_path {output.plot}")
+
+rule get_per_tuple_maximum_amp2s:
+    input:
+        nTuple = rules.create_amplitude_weight.output.amp2s
+    output:
+        json = temp(os.path.join(get_tempfile_dir(), "maximum_amp2s/{efficiency_type}/{jp_config}/phsp_{seed}.json"))
+    run:
+        shell("python create_efficiency/get_maximum_weight.py --input {input.nTuple} --output {output.json} --hit_and_reject_weight amp2")
+
+rule get_maximum_amp2s:
+    input:
+        json = expand(os.path.join(get_tempfile_dir(), "maximum_amp2s/{{efficiency_type}}/{{jp_config}}/phsp_{seed}.json"), seed=range(NJOBS_FOR_MAX))
+    output:
+        json = "create_amplitude_weight/options/{efficiency_type}/{jp_config}/maximum_amp2s.json"
+    priority: 50
+    run:
+        save_maximum(input.json, output.json)
+
+rule hit_and_reject_amp2s:
+    input:
+        nTuple = os.path.join(get_tempfile_dir(), "hit_and_reject_tuples/{efficiency_type}/phsp_{seed}.root"),
+        amp2s = rules.create_amplitude_weight.output.amp2s,
+        json = rules.get_maximum_amp2s.output.json
+    output:
+        nTuple = "create_amplitude_weight/hit_and_reject_tuples/amp2s/{efficiency_type}/{jp_config}/phsp_{seed}.root"
+    priority: 10
+    log:
+        stdout = "logs/create_amplitude_weight/hit_and_reject_{efficiency_type}_{jp_config}/phsp_{seed}.root"
+    run:
+        seed = int(wildcards.seed) + AMP2S_SEED_OFFSET
+        shell("python create_efficiency/hit_and_reject.py --input {input.nTuple} --friends {input.amp2s} --output {output.nTuple} --seed {seed} --hit_and_reject_weight amp2 --max_weight_json {input.json} > {log.stdout}")
+
+# We use a checkpoint here since we don't know how many output files we will produce
+checkpoint get_signal_indices:
+    input:
+        nTuple = expand("create_amplitude_weight/hit_and_reject_tuples/amp2s/{{efficiency_type}}/{{jp_config}}/phsp_{seed}.root", seed=range(SIGNAL_START_SEED, SIGNAL_END_SEED))
+    output:
+        json = "assign_Lb_mass/signal/{efficiency_type}/{jp_config}/checkpoint.json"
+    run:
+        seed = abs(hash(f"{wildcards.efficiency_type}_{wildcards.jp_config}"))
+        output_dir = os.path.dirname(output.json)
+        shell("python assign_Lb_mass/get_indices_for_toy.py --inputs {input.nTuple} --average_nentries_toy {N_SIGNAL_AVERAGE} --seed {seed} --checkpoint {output.json} --output_dir {output_dir}")
+
+rule split_signal_toys:
+    input:
+        checkpoint = "assign_Lb_mass/signal/{efficiency_type}/{jp_config}/checkpoint.json",
+        json = "assign_Lb_mass/signal/{efficiency_type}/{jp_config}/indices_{index}.json"
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "assign_Lb_mass/{efficiency_type}/{jp_config}/phsp_signal_{index}.root"))
+    run:
+        shell("python assign_Lb_mass/split_into_toy.py --json {input.json} --output {output.nTuple} --out_treename DTree")
+
+rule attach_Lb_mass_signal:
+    input:
+        nTuple = rules.split_signal_toys.output.nTuple
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "assign_Lb_mass/{efficiency_type}/{jp_config}/phsp_withLbMass_signal_{index}.root"))
+    log: 
+        stdout = "logs/assign_Lb_mass/{efficiency_type}/signal_{jp_config}/assign_Lb_mass_{index}.log"
+    run:
+        seed = int(wildcards.index) + SIGNAL_START_SEED
+        os.makedirs(os.path.dirname(output.nTuple), exist_ok=True)
+        shell("root -b -l -q \'assign_Lb_mass/assign_Lb_mass.C(\"sig\", {seed}, \"{input.nTuple}\", \"{output.nTuple}\")\' > {log.stdout}")
+
+# We use a checkpoint here since we don't know how many output files we will produce
+checkpoint get_background_indices:
+    input:
+        nTuple = expand("create_efficiency/hit_and_reject_tuples/{{efficiency_type}}/phsp_{seed}.root", seed=range(BACKGROUND_START_SEED, BACKGROUND_END_SEED))
+    output:
+        json = "assign_Lb_mass/background/{efficiency_type}/checkpoint.json"
+    run:
+        seed = abs(hash(wildcards.efficiency_type))
+        output_dir = os.path.dirname(output.json)
+        shell("python assign_Lb_mass/get_indices_for_toy.py --inputs {input.nTuple} --average_nentries_toy {N_BACKGROUND_AVERAGE} --seed {seed} --checkpoint {output.json} --output_dir {output_dir}")
+
+rule split_background_toys:
+    input:
+        checkpoint = "assign_Lb_mass/background/{efficiency_type}/checkpoint.json",
+        json = "assign_Lb_mass/background/{efficiency_type}/indices_{index}.json"
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "assign_Lb_mass/{efficiency_type}/phsp_background_{index}.root"))
+    run:
+        shell("python assign_Lb_mass/split_into_toy.py --json {input.json} --output {output.nTuple} --out_treename DTree")
+
+rule attach_Lb_mass_background:
+    input:
+        nTuple = rules.split_background_toys.output.nTuple
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "assign_Lb_mass/{efficiency_type}/phsp_withLbMass_background_{index}.root"))
+    log: 
+        stdout = "logs/assign_Lb_mass/{efficiency_type}/background/assign_Lb_mass_{index}.log"
+    run:
+        seed = int(wildcards.index) + BACKGROUND_START_SEED
+        os.makedirs(os.path.dirname(output.nTuple), exist_ok=True)
+        shell("root -b -l -q \'assign_Lb_mass/assign_Lb_mass.C(\"bkg\", {seed}, \"{input.nTuple}\", \"{output.nTuple}\")\' > {log.stdout}")
+
+rule sPlot:
+    input:
+        signal = rules.attach_Lb_mass_signal.output.nTuple,
+        background = rules.attach_Lb_mass_background.output.nTuple
+    output:
+        plot = "fit_for_sw/plots/{efficiency_type}/{jp_config}/sFit_toy_{index}.pdf",
+        nTuple = temp(os.path.join(get_tempfile_dir(), "fit_for_sw/{efficiency_type}/{jp_config}/toy_{index}.root"))
+    log:
+        stdout = "logs/fit_for_sw/{efficiency_type}/{jp_config}/sFit_toy_{index}.log"
+    run:
+        os.makedirs(os.path.dirname(output.plot), exist_ok=True)
+        os.makedirs(os.path.dirname(output.nTuple), exist_ok=True)
+        shell("root -l -q \'fit_for_sw/massFit.C(\"{input.signal}\", \"{input.background}\", \"{output.nTuple}\", \"{output.plot}\")\' > {log.stdout}")
+
+rule smear_mJpsip:
+    input:
+        nTuple = rules.sPlot.output.nTuple
+    output:
+        nTuple = temp(os.path.join(get_tempfile_dir(), "fit_for_sw/{efficiency_type}/{jp_config}/smeared_toy_{index}.root"))
+    run:
+        seed = int(wildcards.index)
+        shell("python smear_mJpsip/smear.py --input {input.nTuple} --output {output.nTuple} --seed {seed}")
+
+rule rearrange_mJpsip:
+    input:
+        nTuple = rules.smear_mJpsip.output.nTuple
+    output:
+        nTuple = "output/{efficiency_type}/{jp_config}/toy_{index}.root"
+    run:
+        shell("root -l -q \'rearrange_mJpsip/reOrder.C(\"{input.nTuple}\", \"{output.nTuple}\")\'")
+
+rule compare_toy_data_distributions:
+    input:
+        toy = rules.rearrange_mJpsip.output.nTuple,
+        real_data = "../Fit_fullPHSP/sPlot.root",
+        yaml = "check_toys/compare_distributions.yaml"
+    output:
+        plot = "check_toys/plots/{efficiency_type}/{jp_config}/toy_{index}.pdf"
+    run:
+        shell("python check_toys/compare_distributions.py \
+                --data {input.real_data} \
+                --toy {input.toy} \
+                --treename DTree \
+                --weight nsig_sw \
+                --yaml {input.yaml} \
+                --output_path {output.plot}"
+             )
+
+def aggregated_toy(wildcards):
+    def parse_json(json_path):
+        import json
+        with open(json_path, "r") as file:
+            n_splits = json.load(file)["n_splits"]
+        return n_splits
+
+    signal_json = checkpoints.get_signal_indices.get(**wildcards).output.json
+    background_json = checkpoints.get_background_indices.get(**wildcards).output.json
+    n_signal = parse_json(signal_json)
+    n_background = parse_json(background_json)
+    n_toys = min(n_signal, n_background)
+    nTuples = expand("output/{{efficiency_type}}/{{jp_config}}/toy_{index}.root", index=range(n_toys))
+    plots = expand("check_toys/plots/{{efficiency_type}}/{{jp_config}}/toy_{index}.pdf", index=range(0, n_toys, 10)) # Plot distribution of every 10th toy
+    return nTuples + plots
+
+rule aggregate_toys:
+    input:
+        nTuples_and_plots = aggregated_toy
+    output:
+        token = touch("output/{efficiency_type}/{jp_config}/token")
+
+rule get_toymc_per_tuple_maximum_efficiency:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        efficiency = rules.attach_efficiencies.output.nTuple
+    output:
+        json = temp(os.path.join(get_tempfile_dir(), "maximum_toymc_efficiency/phsp_{seed}.json"))
+    run:
+        shell("python create_efficiency/get_maximum_weight.py --input {input.nTuple} --friends {input.efficiency} --output {output.json} --hit_and_reject_weight eff")
+
+rule get_toymc_per_tuple_maximum_GBweight:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        GBweight = os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweight7.root")
+    output:
+        json = temp(os.path.join(get_tempfile_dir(), "maximum_toymc_GBweight/phsp_{seed}.json"))
+    run:
+        shell("python create_efficiency/get_maximum_weight.py --input {input.nTuple} --friends {input.GBweight} --output {output.json} --hit_and_reject_weight GBweight")
+
+def save_maximum(list_of_json, output_path):
+    import json
+
+    per_tuple_maximums = list()
+    for path in list_of_json:
+        with open(path, "r") as file:
+            maximum = json.load(file)["maximum"]
+            per_tuple_maximums.append(maximum)
+    overall_maximum = max(per_tuple_maximums)
+
+    dump_dict = { "maximum" : overall_maximum, "values" : per_tuple_maximums }
+    with open(output_path, "w") as file:
+        file.write(json.dumps(dump_dict, indent=2))
+        file.close()
+
+rule get_maximum_toymc_efficiency:
+    input:
+        json = expand(rules.get_toymc_per_tuple_maximum_efficiency.output.json, seed=range(TOYMC_START_SEED, TOYMC_START_SEED + NJOBS_FOR_MAX)),
+    output:
+        json = "create_efficiency/options/maximum_toymc_efficiency.json"
+    priority: 50
+    run:
+        save_maximum(input.json, output.json)
+
+rule get_maximum_toymc_GBweight:
+    input:
+        json = expand(rules.get_toymc_per_tuple_maximum_GBweight.output.json, seed=range(TOYMC_START_SEED, TOYMC_START_SEED + NJOBS_FOR_MAX)),
+    output:
+        json = "create_efficiency/options/maximum_toymc_GBweight.json"
+    priority: 50
+    run:
+        save_maximum(input.json, output.json)
+
+rule hit_and_reject_toymc_efficiency:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        efficiency = rules.attach_efficiencies.output.nTuple,
+        json = rules.get_maximum_toymc_efficiency.output.json
+    output:
+        nTuple = "create_efficiency/hit_and_reject_toymc/efficiency/phsp_{seed}.root"
+    log:
+        stdout = "logs/create_efficiency/hit_and_reject_efficiency_{seed}.root"
+    run:
+        shell("python create_efficiency/hit_and_reject.py --input {input.nTuple} --friends {input.efficiency} --output {output.nTuple} --seed {wildcards.seed} --hit_and_reject_weight eff --max_weight_json {input.json} > {log.stdout}")
+
+rule hit_and_reject_toymc_GBweight:
+    input:
+        nTuple = rules.kinematic_filter.output.nTuple,
+        GBweight = os.path.join(get_tempfile_dir(), "GBweight/phsp_withangles_{seed}_GBweight7.root"),
+        json = rules.get_maximum_toymc_GBweight.output.json
+    output:
+        nTuple = "create_efficiency/hit_and_reject_toymc/GBweight/phsp_{seed}.root"
+    log:
+        stdout = "logs/create_efficiency/hit_and_reject_GBweight_{seed}.root"
+    run:
+        shell("python create_efficiency/hit_and_reject.py --input {input.nTuple} --friends {input.GBweight} --output {output.nTuple} --seed {wildcards.seed} --hit_and_reject_weight GBweight --max_weight_json {input.json} > {log.stdout}")
+
+# We use a checkpoint here since we don't know how many output files we will produce
+checkpoint get_toy_mcsw_indices:
+    input:
+        nTuple = expand("create_efficiency/hit_and_reject_toymc/{{efficiency_type}}/phsp_{seed}.root", seed=range(TOYMC_START_SEED, TOYMC_END_SEED))
+    output:
+        json = "assign_Lb_mass/toymc/{efficiency_type}/checkpoint.json"
+    run:
+        seed = abs(hash("toymc" + wildcards.efficiency_type))
+        output_dir = os.path.dirname(output.json)
+        shell("python assign_Lb_mass/get_indices_for_toy.py --inputs {input.nTuple} --average_nentries_toy {N_TOYMC_AVERAGE} --seed {seed} --checkpoint {output.json} --output_dir {output_dir}")
+
+rule split_toymc:
+    input:
+        checkpoint = "assign_Lb_mass/toymc/{efficiency_type}/checkpoint.json",
+        json = "assign_Lb_mass/toymc/{efficiency_type}/indices_{index}.json"
+    output:
+        nTuple = "output/toymc/{efficiency_type}/mcsw_{index}.root"
+    run:
+        shell("python assign_Lb_mass/split_into_toy.py --json {input.json} --output {output.nTuple} --out_treename h1")
+
+rule compare_toy_mcsw_distributions:
+    input:
+        toy = rules.split_toymc.output.nTuple,
+        mcsw = "../Fit_fullPHSP/mcsw.root",
+        yaml = "check_toys/compare_distributions.yaml"
+    output:
+        plot = "check_toys/plots/toymc/{efficiency_type}/mcsw_{index}.pdf"
+    run:
+        shell("python check_toys/compare_distributions.py \
+                --mcsw {input.mcsw} \
+                --toy {input.toy} \
+                --treename h1 \
+                --weight sw \
+                --yaml {input.yaml} \
+                --output_path {output.plot}"
+             )
+
+def aggregated_toymc(wildcards):
+    def parse_json(json_path):
+        import json
+        with open(json_path, "r") as file:
+            n_splits = json.load(file)["n_splits"]
+        return n_splits
+
+    toymc_json = checkpoints.get_toy_mcsw_indices.get(**wildcards).output.json
+    n_toymc = parse_json(toymc_json)
+    nTuples = expand("output/toymc/{{efficiency_type}}/mcsw_{index}.root", index=range(n_toymc))
+    plots = expand("check_toys/plots/toymc/{{efficiency_type}}/mcsw_{index}.pdf", index=range(0, n_toymc, 10)) # Plot distribution of every 10th toy
+    return nTuples + plots
+
+rule aggregate_toymc:
+    input:
+        nTuples_and_plots = aggregated_toymc
+    output:
+        token = touch("output/toymc/{efficiency_type}/token")

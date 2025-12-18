@@ -1,0 +1,22 @@
+n_estimators : 200
+learning_rate : 0.05
+max_depth : 9
+min_samples_leaf : 1000
+subsample : 0.5
+max_features : 1.0
+
+toy_variables :
+    - "mkp"
+    - "cosTheta_L"
+    - "cosTheta_Jpsi"
+    - "phiK"
+    - "phiMu"
+    - "cosTheta_Lb"
+
+MC_variables :
+    - "mkp"
+    - "cosTheta_L"
+    - "cosTheta_Jpsi"
+    - "phiK"
+    - "phiMu"
+    - "cosTheta_Lb"

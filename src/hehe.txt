@@ -1,0 +1,44 @@
+diff --git a/src/RooDalitzAmplitude.cxx b/src/RooDalitzAmplitude.cxx
+index 02782c6..6c168ca 100755
+--- a/src/RooDalitzAmplitude.cxx
++++ b/src/RooDalitzAmplitude.cxx
+@@ -1003,19 +1003,34 @@ void RooDalitzAmplitude::genToy(const TString mcdata, const char *name, bool ver
+ 		w = val * sweight;
+ 		//    w = val;
+ 		//calculcate each wi
+-                wl[0] = GetAmp2sForInt_SMR(p, -1, 1) * sweight;
+-                wz[0] = GetAmp2sForInt_SMR(p, -1, 2) * sweight;
+-                wx[0] = GetAmp2sForInt_SMR(p,-1,10) * sweight;
++                wl[0] = GetAmp2sForInt(p, -1, 1) * sweight;
++                if (mjpsip > 4.2 && mjpsip < 4.6) {
++                        wz[0] = GetAmp2sForInt_SMR(p, -1, 2) * sweight;
++                }
++                else{
++                        wz[0] = GetAmp2sForInt(p, -1, 2) * sweight;
++                }
++                wx[0] = GetAmp2sForInt(p,-1,10) * sweight;
+ 
+ 		for (int ii = 0; ii < NZ; ++ii)
+ 		{
+ 			if (!(TString((_resListZ->At(ii))->GetName())).Contains("SC"))
+-                                wz[ii + 1] = GetAmp2sForInt_SMR(p, ii + NR) * sweight;
++                                if (mjpsip > 4.2 && mjpsip < 4.6) {
++                                        wz[ii + 1] = GetAmp2sForInt_SMR(p, ii + NR) * sweight;
++                                }
++                                else{
++                                        wz[ii + 1] = GetAmp2sForInt(p, ii + NR) * sweight;
++                                }
+ 		}
+                 for(int ii=0; ii<NX; ++ii)
+                         wx[ii+1] = GetAmp2sForInt_SMR(p,ii+NR+NZ) * sweight;
+ 		for (int ii = 0; ii < 6; ++ii)
+-                        wZwv[ii] = GetAmp2sForInt_SMR(p, nZwv[ii], 5) * sweight;
++                        if (mjpsip > 4.2 && mjpsip < 4.6) {
++                                wZwv[ii] = GetAmp2sForInt_SMR(p, nZwv[ii], 5) * sweight;
++                        }
++                        else{
++                                wZwv[ii] = GetAmp2sForInt(p, nZwv[ii], 5) * sweight;
++                        }
+ 		if (verbose)
+ 		{
+ 			for (int ii = 0; ii < 10; ++ii)

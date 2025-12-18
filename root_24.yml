@@ -1,0 +1,14 @@
+name: root_24
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python 3.*
+  - root 6.24.6
+  - gcc_linux-64
+  - boost
+  - snakemake
+  - hep_ml
+  - matplotlib
+  - pydantic

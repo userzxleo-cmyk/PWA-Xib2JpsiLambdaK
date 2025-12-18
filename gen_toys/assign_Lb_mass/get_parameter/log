@@ -1,0 +1,184 @@
+-------------------------
+Set LHCb Style - Feb 2012
+-------------------------
+
+Processing massFit.C...
+
+[1mRooFit v3.60 -- Developed by Wouter Verkerke and David Kirkby[0m 
+                Copyright (C) 2000-2013 NIKHEF, University of California & Stanford University
+                All rights reserved, please read http://roofit.sourceforge.net/license.txt
+
+[INFO] Total candidates after selection: 271814
+RooDataSet::Data[Lb_LOKI_MASS_JpsiConstr] = 271814 entries
+[#1] INFO:Minization -- p.d.f. provides expected number of events, including extended term in likelihood.
+[#1] INFO:Minization -- RooMinuit::optimizeConst: activating const optimization
+[#1] INFO:Eval -- RooAbsTestStatistic::initMPMode: started 50 remote server process.
+ **********
+ **   13 **MIGRAD        4500           1
+ **********
+ FIRST CALL TO USER FUNCTION AT NEW START POINT, WITH IFLAG=4.
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+[#1] INFO:Minization --  The following expressions will be evaluated in cache-and-track mode: (CB1,CB2,comb_BkgMPdf)
+ START MIGRAD MINIMIZATION.  STRATEGY  1.  CONVERGENCE WHEN EDM .LT. 1.00e-03
+ FCN=-1.80457e+06 FROM MIGRAD    STATUS=INITIATE       48 CALLS          49 TOTAL
+                     EDM= unknown      STRATEGY= 1      NO ERROR MATRIX       
+  EXT PARAMETER               CURRENT GUESS       STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  CB_fr        1.97230e-01   9.86150e-02   2.55662e-01  -6.95341e+02
+   2  M_Lb         5.62020e+03   7.00000e+01   2.02133e-01   3.03710e+03
+   3  N_{Bkg_comb}   1.43245e+05   3.95134e+04   2.09944e-01   4.79469e+04
+   4  N_{Sig}      2.51890e+05   3.95134e+04   2.09944e-01   6.57036e+04
+   5  a1           6.43910e-01   2.00000e+00   2.01800e-01   1.92487e+04
+   6  a2          -1.83961e+00   2.00000e+00   2.05061e-01  -8.97238e+03
+   7  p0          -1.97898e-03   1.00000e-01   2.01360e-01   1.15313e+05
+   8  sigma1       2.80640e+00   4.03200e-01   4.71415e-02  -2.86710e+03
+   9  sigma2       6.35490e+00   2.67745e+00   1.23637e-01  -1.22742e+04
+                               ERR DEF= 0.5
+ MIGRAD FAILS TO FIND IMPROVEMENT
+ MIGRAD MINIMIZATION HAS CONVERGED.
+ MIGRAD WILL VERIFY CONVERGENCE AND ERROR MATRIX.
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=-1.82701e+06 FROM MIGRAD    STATUS=CONVERGED     474 CALLS         475 TOTAL
+                     EDM=0.000744769    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  CB_fr        1.90667e-01   8.89931e-03   9.70683e-03  -5.79875e-01
+   2  M_Lb         5.62020e+03   2.95291e-02   4.79434e-05  -1.77515e+01
+   3  N_{Bkg_comb}   1.09860e+05   4.53148e+02   1.90303e-03   1.92158e+00
+   4  N_{Sig}      1.61953e+05   5.07592e+02   2.04463e-03  -2.01580e+00
+   5  a1           6.26396e-01   5.23119e-02   1.03419e-03  -6.06241e+00
+   6  a2          -1.85292e+00   2.05719e-02   1.50687e-03  -3.82321e+00
+   7  p0          -2.26094e-03   3.96041e-05   7.11621e-05  -2.06385e+01
+   8  sigma1       2.85224e+00   1.51549e-01   5.01232e-03   2.31905e+00
+   9  sigma2       6.37694e+00   4.50098e-02   8.00715e-04   1.26928e+01
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  25    NPAR=  9    ERR DEF=0.5
+  7.921e-05 -6.167e-05  5.148e-01 -5.160e-01  3.677e-04 -1.061e-06 -2.206e-08  9.815e-04  2.882e-04 
+ -6.167e-05  8.720e-04 -3.677e+00  3.683e+00 -9.767e-04 -4.435e-05  1.512e-07 -2.849e-03 -4.622e-04 
+  5.148e-01 -3.677e+00  2.053e+05 -9.556e+04  8.687e+00 -3.556e+00 -7.748e-05  1.524e+01  6.579e+00 
+ -5.160e-01  3.683e+00 -9.556e+04  2.577e+05 -8.703e+00  3.561e+00  7.928e-05 -1.526e+01 -6.594e+00 
+  3.677e-04 -9.767e-04  8.687e+00 -8.703e+00  2.737e-03 -9.486e-05 -2.979e-07  7.182e-03  1.881e-03 
+ -1.061e-06 -4.435e-05 -3.556e+00  3.561e+00 -9.486e-05  4.232e-04 -1.245e-07  1.994e-04 -3.076e-04 
+ -2.206e-08  1.512e-07 -7.748e-05  7.928e-05 -2.979e-07 -1.245e-07  1.568e-09 -6.700e-07 -1.828e-07 
+  9.815e-04 -2.849e-03  1.524e+01 -1.526e+01  7.182e-03  1.994e-04 -6.700e-07  2.297e-02  3.963e-03 
+  2.882e-04 -4.622e-04  6.579e+00 -6.594e+00  1.881e-03 -3.076e-04 -1.828e-07  3.963e-03  2.026e-03 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4      5      6      7      8      9
+        1  0.88841   1.000 -0.235  0.128 -0.114  0.790 -0.006 -0.063  0.728  0.720
+        2  0.79500  -0.235  1.000 -0.275  0.246 -0.632 -0.073  0.129 -0.637 -0.348
+        3  0.60461   0.128 -0.275  1.000 -0.415  0.366 -0.381 -0.004  0.222  0.323
+        4  0.54466  -0.114  0.246 -0.415  1.000 -0.328  0.341  0.004 -0.198 -0.289
+        5  0.97739   0.790 -0.632  0.366 -0.328  1.000 -0.088 -0.144  0.906  0.799
+        6  0.63642  -0.006 -0.073 -0.381  0.341 -0.088  1.000 -0.153  0.064 -0.332
+        7  0.27117  -0.063  0.129 -0.004  0.004 -0.144 -0.153  1.000 -0.112 -0.103
+        8  0.94663   0.728 -0.637  0.222 -0.198  0.906  0.064 -0.112  1.000  0.581
+        9  0.90394   0.720 -0.348  0.323 -0.289  0.799 -0.332 -0.103  0.581  1.000
+ **********
+ **   18 **HESSE        4500
+ **********
+ COVARIANCE MATRIX CALCULATED SUCCESSFULLY
+ FCN=-1.82701e+06 FROM HESSE     STATUS=OK             73 CALLS         548 TOTAL
+                     EDM=0.00127709    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                INTERNAL      INTERNAL  
+  NO.   NAME      VALUE            ERROR       STEP SIZE       VALUE   
+   1  CB_fr        1.90667e-01   1.35864e-02   3.88273e-04  -6.67043e-01
+   2  M_Lb         5.62020e+03   3.58153e-02   9.58868e-06  -8.52499e-02
+   3  N_{Bkg_comb}   1.09860e+05   4.90148e+02   7.61211e-05  -4.59984e-01
+   4  N_{Sig}      1.61953e+05   5.40691e+02   8.17852e-05  -1.81253e-01
+   5  a1           6.26396e-01   8.44315e-02   4.13675e-05   6.26806e-02
+   6  a2          -1.85292e+00   2.05973e-02   6.02746e-05  -1.86369e-01
+   7  p0          -2.26094e-03   4.01664e-05   2.84648e-06  -4.52189e-03
+   8  sigma1       2.85224e+00   2.35091e-01   2.00493e-04  -1.38402e+00
+   9  sigma2       6.37694e+00   6.50076e-02   3.20286e-05  -1.10037e+00
+                               ERR DEF= 0.5
+ EXTERNAL ERROR MATRIX.    NDIM=  25    NPAR=  9    ERR DEF=0.5
+  1.847e-04 -2.763e-04  2.457e+00 -2.457e+00  1.051e-03 -2.123e-05 -9.203e-08  2.842e-03  7.703e-04 
+ -2.763e-04  1.283e-03 -7.537e+00  7.537e+00 -2.337e-03 -1.396e-06  2.892e-07 -6.519e-03 -1.441e-03 
+  2.457e+00 -7.537e+00  2.402e+05 -1.304e+05  2.114e+01 -3.883e+00 -1.366e-03  4.906e+01  1.540e+01 
+ -2.457e+00  7.537e+00 -1.304e+05  2.923e+05 -2.114e+01  3.883e+00  1.366e-03 -4.906e+01 -1.541e+01 
+  1.051e-03 -2.337e-03  2.114e+01 -2.114e+01  7.129e-03 -2.253e-04 -7.470e-07  1.910e-02  5.000e-03 
+ -2.123e-05 -1.396e-06 -3.883e+00  3.883e+00 -2.253e-04  4.242e-04 -1.093e-07 -1.623e-04 -3.962e-04 
+ -9.203e-08  2.892e-07 -1.366e-03  1.366e-03 -7.470e-07 -1.093e-07  1.613e-09 -1.887e-06 -5.039e-07 
+  2.842e-03 -6.519e-03  4.906e+01 -4.906e+01  1.910e-02 -1.623e-04 -1.887e-06  5.528e-02  1.246e-02 
+  7.703e-04 -1.441e-03  1.540e+01 -1.541e+01  5.000e-03 -3.962e-04 -5.039e-07  1.246e-02  4.226e-03 
+ PARAMETER  CORRELATION COEFFICIENTS  
+       NO.  GLOBAL      1      2      3      4      5      6      7      8      9
+        1  0.95373   1.000 -0.568  0.369 -0.334  0.916 -0.076 -0.169  0.890  0.872
+        2  0.86594  -0.568  1.000 -0.429  0.389 -0.773 -0.002  0.201 -0.774 -0.619
+        3  0.67655   0.369 -0.429  1.000 -0.492  0.511 -0.385 -0.069  0.426  0.483
+        4  0.61655  -0.334  0.389 -0.492  1.000 -0.463  0.349  0.063 -0.386 -0.438
+        5  0.99138   0.916 -0.773  0.511 -0.463  1.000 -0.130 -0.220  0.962  0.911
+        6  0.63679  -0.076 -0.002 -0.385  0.349 -0.130  1.000 -0.132 -0.034 -0.296
+        7  0.31511  -0.169  0.201 -0.069  0.063 -0.220 -0.132  1.000 -0.200 -0.193
+        8  0.97818   0.890 -0.774  0.426 -0.386  0.962 -0.034 -0.200  1.000  0.815
+        9  0.95515   0.872 -0.619  0.483 -0.438  0.911 -0.296 -0.193  0.815  1.000
+ **********
+ **   23 **MINOS        4500
+ **********
+ FCN=-1.82701e+06 FROM MINOS     STATUS=SUCCESSFUL   3377 CALLS        3925 TOTAL
+                     EDM=0.00127709    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                  PARABOLIC         MINOS ERRORS        
+  NO.   NAME      VALUE            ERROR      NEGATIVE      POSITIVE   
+   1  CB_fr        1.90667e-01   1.35864e-02  -1.17602e-02   1.66374e-02
+   2  M_Lb         5.62020e+03   3.58153e-02  -3.84584e-02   3.37411e-02
+   3  N_{Bkg_comb}   1.09860e+05   4.90148e+02  -4.92429e+02   4.89108e+02
+   4  N_{Sig}      1.61953e+05   5.40691e+02  -5.36349e+02   5.45754e+02
+   5  a1           6.26396e-01   8.44315e-02  -7.14403e-02   1.01159e-01
+   6  a2          -1.85292e+00   2.05973e-02  -2.05987e-02   2.05358e-02
+   7  p0          -2.26094e-03   4.01664e-05  -4.00076e-05   4.03781e-05
+   8  sigma1       2.85224e+00   2.35091e-01  -2.08497e-01   2.64328e-01
+   9  sigma2       6.37694e+00   6.50076e-02  -5.79512e-02   7.61744e-02
+                               ERR DEF= 0.5
+[#1] INFO:Minization -- RooMinuit::optimizeConst: deactivating const optimization
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(MassPdf) directly selected PDF components: (SigMPdf)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(MassPdf) indirectly selected PDF components: (CB1,CB2)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(MassPdf) directly selected PDF components: (comb_BkgMPdf)
+[#1] INFO:Plotting -- RooAbsPdf::plotOn(MassPdf) indirectly selected PDF components: ()

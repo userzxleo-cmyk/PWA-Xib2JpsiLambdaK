@@ -1,0 +1,7 @@
+variables:
+  mkp : "$m(Kp)$"
+  phiMu : "$\\phi_{\\mu}$"
+  cosTheta_L : "cos($\\theta_{\\Lambda^{*}}$)"
+  cosTheta_Lb : "cos($\\theta_{\\Lambda_{b}}$)"
+  cosTheta_Jpsi : "cos($\\theta_{\\psi}$)"
+  phiK : "$\\phi_{K}$"

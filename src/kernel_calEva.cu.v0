@@ -1,0 +1,896 @@
+#include <cuda_runtime.h>
+#include <thrust/reduce.h>
+#include <thrust/device_ptr.h>
+#include "../RooTDalitz/cuComplex.h"
+#include <iostream>
+#include <vector>
+#include <fstream>
+#include <math.h>
+#include "../RooTDalitz/cu_DPFPropogator.h"
+#include "../RooTDalitz/kernel_calEva.h"
+#include <assert.h>
+#include "../RooTDalitz/MultDevice.h"
+#include "../RooTDalitz/cu_Jpsihh_dlz.h"
+#include "../RooTDalitz/Resonances.h"
+#include "nvToolsExt.h"
+using namespace std;
+
+/*
+   const float _smear_nsigmas = 10;
+   const float _smear_nbins = 30;
+   const float _mres0 = -0.134064 ;
+   const float _mres1 =  0.0599014;
+   const float _mres2 = -0.00655841;
+ */
+
+#define BW_Lambda 
+//#define KMatrix_Lambda
+
+//#define BW_Pc
+#define KMatrix_Pc
+
+
+//#define NUMLz 18 //#Lz
+//#define NUMPc 4 //#Pc
+
+//将任何cuda函数作为CUDA_CALL的参数，能够显示返回的错误，并定位错误。 
+#define CUDA_CALL(x) {const cudaError_t a=(x); if(a != cudaSuccess) {printf("\nerror in line:%d CUDAError:%s(err_num=%d)\n",__LINE__,cudaGetErrorString(a),a); cudaDeviceReset(); assert(0); }}
+//block_size 的设定要考虑shared memory 的大小
+//shared memory per block ：48k bytes
+//每个block所使用的共享空间大小 ：paraList+vampList+paraSplineList)*sizeof(dobule) + 337×sizeof(float)xBLOCK_SIZE  
+//控制BLOCK_SIZE 使所使用的shared memory 不可高于上限
+#define BLOCK_SIZE 256
+
+double *d_fx[DEVICE_NUM];
+float *d_paraList[DEVICE_NUM];
+double *d_nll[DEVICE_NUM];
+int Ns[DEVICE_NUM+1];
+bool once_flag_config = 1;
+//const int nset  = 6;
+//GetAmp2s是在gpu中运行的一个子程序
+//float * intermediate_GetAmp2s[DEVICE_NUM]; 
+
+
+__device__ double GetAmp2s(const float *pp, const float *pp1, const float *pp2, const float * d_paraList, int para_size, int vamp_size, int paraSpline_size, int NR, int NZ, int ip, int N_size)
+    ////return square of complex amplitude
+{
+    float2 H[8];
+    //  float2 HL[8];
+    //  float2 HZ[8];
+
+    for(int i=0;i<=1; ++i) {
+        for(int j=0; j<=1; ++j) {
+            for(int k=0; k<=1; ++k) {
+                H[4*i+2*j+k] = make_cuFloatComplex(0.0f,0.0f);
+                //      HL[4*i+2*j+k] = make_cuFloatComplex(0.0,0.0);
+                //      HZ[4*i+2*j+k] = make_cuFloatComplex(0.0,0.0);
+            }
+        }
+    }
+
+    float mkp(pp[ip]);
+    int S2,LR;
+    float S;
+    int type;
+    float2 ampCoff, Atmp2;
+    float2 BW;
+    float Bterm;
+    float m0, g0;
+    int ir(0);
+    int ampcount = para_size;
+    int splcount = para_size+vamp_size;
+    int kmcount =  para_size + vamp_size + paraSpline_size;
+    //  int NR(NUMLz), NZ(NUMPc);
+    //pp是全局寄存器变量，读取速度不高，先拷到局部寄存器，可节省20%时间［需读取NR次］
+    float ARe_[2][2][6];
+    float AIm_[2][2][6];
+    float DL_[5][2][6];
+    for(int i=0;i<=1; ++i) {//delmu
+        for(int j=0; j<=1; ++j) { //hel0
+            for(int m=0; m<6; ++m) {
+                ARe_[i][j][m] = (pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2) * N_size]); //pp->ARe[i][j][m];
+                AIm_[i][j][m] = (pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2 + 1) * N_size]);  //pp->AIm[i][j][m];
+            }
+        }
+    }
+    for(int i=0; i<5; ++i) {
+        for(int k=0; k<=1; ++k) {
+            for(int m=0; m<6; ++m) {
+                DL_[i][k][m] = (pp[ip+(51 + i * 6 * 2 + k * 6 + m) * N_size]);  //pp->DL[i][k][m];
+            }
+        }
+    }
+
+    while( ir<NR ) {
+        m0 = d_paraList[ir*nset+MASS];
+        g0 = d_paraList[ir*nset+WIDTH];
+        S2 = (int) (d_paraList[ir*nset+SPIN]);
+        LR = (int)(d_paraList[ir*nset+LRESON]);
+        S = (float)S2/2.f;
+        type = (int)(d_paraList[ir*nset+TYPE]);
+        // BW =   BW_AMP(m0,g0,mkp,LR);
+        switch (type) {
+            case BREITWIGNER:
+                {
+                    //mkp
+                    BW = BW_AMP(m0,g0,mkp,LR); 
+                    break;
+                }    
+            case REVISEDKMATRIX: 
+                {
+                    BW = Revised_KMAMP(d_paraList, mkp, ir, 0, NR, 0); break;
+                }
+            case MODELINDEPENDENT:
+                {
+                    BW = ModelIndependentWave3(&d_paraList[splcount], mkp);
+                    m0 = -0.5f;
+                    splcount += 9*NUMSP;      
+                    break;
+                } 
+        } 
+        Bterm = BTerm(S, mkp, m0);
+        BW = cuCmulfc( Bterm, BW );
+
+        for(int k=0; k<=1; ++k) { //hel3 proton
+            for(int m=0; m<6; ++m) {
+                if(fabs(S-0.5f)<1e-10f&&m>=4) {
+                    continue;
+                }
+                ampCoff = make_cuFloatComplex(d_paraList[ampcount++],d_paraList[ampcount++]);
+                if(cuCabsf(ampCoff)<1e-10f) continue;
+                for(int i=0;i<=1; ++i) {//delmu
+                    for(int j=0; j<=1; ++j) { //hel0
+                        Atmp2 = cuCmulf(make_cuFloatComplex((ARe_[i][j][m]), (AIm_[i][j][m])), BW);
+                        Atmp2 = cuCmulfc((DL_[(S2-1)/2][k][m]),Atmp2);
+                        //Atmp2 = cuCmulf(make_cuFloatComplex((pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2) * N_size]), 
+                        //                                    (pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2 + 1) * N_size])), BW); 
+                        //Atmp2 = cuCmulfc( (pp[ip+(51 + ((S2-1)/2) * 6 * 2 + k * 6 + m) * N_size]),Atmp2);
+                        H[4*i+2*j+k] = cuCaddf(H[4*i+2*j+k],cuCmulf(Atmp2,ampCoff));
+                    }
+                }
+            }
+        }
+        ir++;
+    }
+
+    float AZRe_[2][2][12];
+    float AZIm_[2][2][12];
+    float DZ_[4][2][12];
+    for(int i=0;i<=1; ++i) {//delmu
+        for(int j=0; j<=1; ++j) { //hel0
+            for(int m=0; m<12; ++m) {
+                AZRe_[i][j][m] = (pp1[ip+( (i * 12 * 2 + j * 12 + m) * 2) * N_size]); //pp->AZRe[i][j][m];
+                AZIm_[i][j][m] = (pp1[ip+( (i * 12 * 2 + j * 12 + m) * 2 + 1) * N_size]);  //pp->AZIm[i][j][m];
+            }
+        }
+    }
+
+    for(int i=0; i<4; ++i) {
+        for(int k=0; k<=1; ++k) {
+            for(int m=0; m<12; ++m) {
+                DZ_[i][k][m] = (pp2[ip+(i * 12 * 2 + k * 12 + m) * N_size]); //pp->DZ[i][k][m];
+            }
+        }
+    }
+    //Z part
+    int irZ(0);
+    float help;
+    float mjpsip(pp[ip+N_size]);
+    float2 AKM[4][MYZN];
+    AKM[0][0]=make_cuFloatComplex(0.0f,0.0f);
+    AKM[1][0]=make_cuFloatComplex(0.0f,0.0f);
+    AKM[2][0]=make_cuFloatComplex(0.0f,0.0f);
+    AKM[3][0]=make_cuFloatComplex(0.0f,0.0f);
+    int ikmcount[]={0,0,0,0};
+    while ( irZ<NZ )  {
+        m0 = d_paraList[ir*nset+MASS];
+        g0 = d_paraList[ir*nset+WIDTH];
+        S2 = (int) (d_paraList[ir*nset+SPIN]);
+        LR = (int)(d_paraList[ir*nset+LRESON]);
+        type = (int) (d_paraList[ir*nset+TYPE]);
+        S = (float)S2/2.f;
+        //no spline now, to be open when using spline for Pc    
+        switch (type) {
+            case MODELINDEPENDENT:
+                {
+                    //mjpsip
+                    //h_float_pp[i][it_h_float_pp + 1 * N_size]
+                    BW = ModelIndependentWave(&d_paraList[splcount], mjpsip);
+                    m0 = -0.5f;
+                    //printf("Spn Defined \n");
+                    splcount += 9*NUMSPZ;
+                    break;
+                }
+            case BREITWIGNER: 
+                { BW = BW_AMPZ(m0,g0,mjpsip,LR); break;}
+            case REVISEDKMATRIX:
+                { BW = Revised_KMAMP(d_paraList, mjpsip, ir, NR, NR+NZ, 1); break; }
+            case TRIANGLE:
+                { BW = GetCusp_AMP(m0,g0,mjpsip); break; }  
+            case KMATRIX:
+                {
+                    int ik(0);
+                    if(S2==3) ik=1;
+                    if(LR>0) ik = ik+2;
+                    if(cuCabsf(AKM[ik][0])<1e-10f) { 
+                        KMatrix(mjpsip, d_paraList, S2, ((LR>0)?1:-1) ,  NR, NR+NZ, kmcount, ik,  AKM[ik]);
+                        //	   &d_paraList[kmcount+ik*(Npmax+NKMC)*NKMC], &d_paraList[kmcount+Npmax*NKMC+ik*(Npmax+NKMC)*NKMC], AKM[ik]);
+                    }
+                    BW = AKM[ik][ikmcount[ik]];
+                    ikmcount[ik]++;
+                    break;
+                }
+        }
+        Bterm = BTermZ(S, mjpsip, m0);
+        BW = cuCmulfc( Bterm, BW );
+
+        //Rj BW here
+
+        for(int k=0; k<=1; ++k) { //hel3 proton
+            //there are 12 amplitudes to be added coherently //helpsi,0,+/-1, helZ,+/-1/2, help=+/-1/2
+            int m(0);
+            for(int helpsi = -1; helpsi <=1; ++helpsi) {
+                for(int ihz = 0; ihz<=1; ++ihz) {
+                    //   helZ = (ihz==0) ? -0.5: 0.5;
+                    for(int ihp = 0; ihp<=1; ++ihp) {
+                        help = (ihp==0) ? -0.5f: 0.5f;	    
+                        if(fabsf((float)helpsi-help)>S) { m++; continue;}
+                        ampCoff = make_cuFloatComplex(d_paraList[ampcount++],d_paraList[ampcount++]);
+                        if(cuCabsf(ampCoff)<1e-10f) { m++; continue;}
+                        for(int i=0;i<=1; ++i) {//delmu
+                            for(int j=0; j<=1; ++j) { //hel0
+                                Atmp2 = cuCmulf(make_cuFloatComplex((AZRe_[i][j][m]), (AZIm_[i][j][m])), BW);
+                                Atmp2 = cuCmulfc((DZ_[(S2-1)/2][k][m]),Atmp2);
+                                //Atmp2 = cuCmulf(make_cuFloatComplex((pp1[ip+( (i * 12 * 2 + j * 12 + m) * 2) * N_size]), 
+                                //                                    (pp1[ip+( (i * 12 * 2 + j * 12 + m) * 2 + 1) * N_size])), BW);
+                                //Atmp2 = cuCmulfc((pp2[ip+(((S2-1)/2) * 12 * 2 + k * 12 + m) * N_size]),Atmp2);
+                                H[4*i+2*j+k] = cuCaddf( H[4*i+2*j+k], cuCmulf(Atmp2,ampCoff) );
+                            }
+                        }
+                        m++;
+                    }
+                }
+            }
+        }
+        ir++;
+        irZ++;
+    }
+
+    //  printf("wmzwmz try debug mjpsip=%f,mjpsip_smear=%f, BW=%f \n",pp->mjpsip, mjpsip_smear, BW);
+    return (cuCabsf2(H[0]) + cuCabsf2(H[1])
+            + cuCabsf2(H[2]) + cuCabsf2(H[3])
+            + cuCabsf2(H[4]) + cuCabsf2(H[5])
+            + cuCabsf2(H[6]) + cuCabsf2(H[7]));
+    //  return ;//(pdf>1e-10f)?pdf:1e-10f;
+}
+
+
+__device__ float GetAmp2sSMR(const float *pp, const float *pp1, const float *pp2, const float * d_paraList, int para_size, int vamp_size, int paraSpline_size, int NR, int NZ, int ip, int N_size) 
+    ////return square of complex amplitude
+{
+    float2 HL[8];
+    float2 HZ[MYZN][8]; //at most 10 Pc
+    float2 BW1Pc[MYZN];
+    float BW2PcRR[MYZN][MYZN];
+    float BW2PcII[MYZN][MYZN];
+    float BW2PcIR[MYZN][MYZN];
+    float BW2PcRI[MYZN][MYZN];
+
+    for(int i=0;i<=1; ++i) {
+        for(int j=0; j<=1; ++j) {
+            for(int k=0; k<=1; ++k) {
+                HL[4*i+2*j+k] = make_cuFloatComplex(0.0f,0.0f);
+                for(int iPc=0; iPc<MYZN; ++iPc){
+                    HZ[iPc][4*i+2*j+k] = make_cuFloatComplex(0.0f,0.0f);
+                }
+            }
+        }
+    }
+    for(int iPc=0; iPc<MYZN; ++iPc){
+        BW1Pc[iPc] = make_cuFloatComplex(0.0f,0.0f);
+        for(int jPc=0; jPc<MYZN; ++jPc){
+            BW2PcRR[iPc][jPc] = 0.f;
+            BW2PcII[iPc][jPc] = 0.f;
+            BW2PcIR[iPc][jPc] = 0.f;
+            BW2PcRI[iPc][jPc] = 0.f;
+        }
+    }
+
+    float mkp(pp[ip]);
+    int S2,LR;
+    float S;
+    int type;
+    int iS2,iLR;
+    float iS;
+    int itype;
+    //  int jS2,jLR;
+    //  float jS;
+    //  int jtype;
+    float2 ampCoff, Atmp2;
+    float2 BW;
+    float2 BWPc_tmp[MYZN];
+    float2 iBW;
+    float2 jBW;
+    float Bterm;
+    float iBterm;
+    //  float jBterm;
+    float m0, g0;
+    float im0, ig0;
+    //  float jm0, jg0;
+    int ir(0);
+    int ampcount = para_size;
+    int splcount = para_size+vamp_size;
+    int kmcount =  para_size + vamp_size + paraSpline_size;
+    //  int NR(NUMLz), NZ(NUMPc);
+    //pp是全局寄存器变量，读取速度不高，先拷到局部寄存器，可节省20%时间［需读取NR次］
+    float ARe_[2][2][6];
+    float AIm_[2][2][6];
+    float DL_[5][2][6];   
+    for(int i=0;i<=1; ++i) {//delmu
+        for(int j=0; j<=1; ++j) { //hel0
+            for(int m=0; m<6; ++m) {  
+                ARe_[i][j][m] = (pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2) * N_size]); //pp->ARe[i][j][m];
+                AIm_[i][j][m] = (pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2 + 1) * N_size]); //pp->AIm[i][j][m];
+            }
+        }
+    }
+    for(int i=0; i<5; ++i) {
+        for(int k=0; k<=1; ++k) {
+            for(int m=0; m<6; ++m) {
+                DL_[i][k][m] = (pp[ip+(51 + i * 6 * 2 + k * 6 + m) * N_size]); //pp->DL[i][k][m];
+            }
+        }
+    }     
+    while( ir<NR ) { 
+        m0 = d_paraList[ir*nset+MASS];
+        g0 = d_paraList[ir*nset+WIDTH];
+        S2 = (int) (d_paraList[ir*nset+SPIN]);
+        LR = (int)(d_paraList[ir*nset+LRESON]);    
+        S = (float)S2/2.f;
+        type = (int)(d_paraList[ir*nset+TYPE]);
+        // BW =   BW_AMP(m0,g0,mkp,LR);
+        switch (type) {
+            case BREITWIGNER:
+                {BW = BW_AMP(m0,g0,mkp,LR); break;}
+            case REVISEDKMATRIX: 
+                {BW = Revised_KMAMP(d_paraList, mkp, ir, 0, NR, 0); break;}
+            case MODELINDEPENDENT:
+                {
+                    BW = ModelIndependentWave3(&d_paraList[splcount], mkp);
+                    m0 = -0.5f;
+                    splcount += 9*NUMSP;      
+                    break;
+                } 
+        }     
+
+        Bterm = BTerm(S, mkp, m0);      
+        BW = cuCmulfc( Bterm, BW );
+
+        for(int k=0; k<=1; ++k) { //hel3 proton
+            for(int m=0; m<6; ++m) {
+                if(fabs(S-0.5f)<1e-10f&&m>=4) {
+                    continue;
+                }
+
+                ampCoff = make_cuFloatComplex(d_paraList[ampcount++],d_paraList[ampcount++]);
+                if(cuCabsf(ampCoff)<1e-10f) continue;
+                for(int i=0;i<=1; ++i) {//delmu
+                    for(int j=0; j<=1; ++j) { //hel0
+                        Atmp2 = cuCmulf(make_cuFloatComplex((ARe_[i][j][m]), (AIm_[i][j][m])), BW);
+                        Atmp2 = cuCmulfc((DL_[(S2-1)/2][k][m]),Atmp2);
+                        //Atmp2 = cuCmulf(make_cuFloatComplex((pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2) * N_size]), 
+                        //                                    (pp[ip+(3+ (i * 6 * 2 + j * 6 + m) * 2 + 1) * N_size])), BW); 
+                        //Atmp2 = cuCmulfc( (pp[ip+(51 + ((S2-1)/2) * 6 * 2 + k * 6 + m) * N_size]),Atmp2);
+                        HL[4*i+2*j+k] = cuCaddf(HL[4*i+2*j+k],cuCmulf(Atmp2,ampCoff));
+                    }
+                }  
+            }    
+        }
+        ir++;
+    }
+
+    float AZRe_[2][2][12];
+    float AZIm_[2][2][12];
+    float DZ_[4][2][12];  
+    for(int i=0;i<=1; ++i) {//delmu
+        for(int j=0; j<=1; ++j) { //hel0
+            for(int m=0; m<12; ++m) {  
+                AZRe_[i][j][m] = (pp1[ip+( (i * 12 * 2 + j * 12 + m) * 2) * N_size]); //pp->AZRe[i][j][m];
+                AZIm_[i][j][m] = (pp1[ip+((i * 12 * 2 + j * 12 + m) * 2 + 1) * N_size]); //pp->AZIm[i][j][m];
+            }
+        }
+    }
+    for(int i=0; i<4; ++i) {
+        for(int k=0; k<=1; ++k) {
+            for(int m=0; m<12; ++m) {
+                DZ_[i][k][m] = (pp2[ip+( i * 12 * 2 + k * 12 + m) * N_size]); //pp->DZ[i][k][m];
+            }
+        }
+    }     
+    //Z part angular function
+    int irZ(0);
+    float help;
+    float mjpsip(pp[ip+N_size]);
+    while ( irZ<NZ )  {
+        m0 = d_paraList[ir*nset+MASS];
+        g0 = d_paraList[ir*nset+WIDTH];
+        S2 = (int) (d_paraList[ir*nset+SPIN]);        
+        LR = (int)(d_paraList[ir*nset+LRESON]);
+        type = (int) (d_paraList[ir*nset+TYPE]);      
+        S = (float)S2/2.f;
+
+        for(int k=0; k<=1; ++k) { //hel3 proton
+            //there are 12 amplitudes to be added coherently //helpsi,0,+/-1, helZ,+/-1/2, help=+/-1/2
+            int m(0);
+            for(int helpsi = -1; helpsi <=1; ++helpsi) {
+                for(int ihz = 0; ihz<=1; ++ihz) {
+                    //   helZ = (ihz==0) ? -0.5: 0.5;
+                    for(int ihp = 0; ihp<=1; ++ihp) {
+                        help = (ihp==0) ? -0.5f: 0.5f;
+
+                        if(fabs((float)helpsi-help)>S) { m++; continue;}
+                        ampCoff = make_cuFloatComplex(d_paraList[ampcount++],d_paraList[ampcount++]);
+                        if(cuCabsf(ampCoff)<1e-10f) { m++; continue;}
+                        for(int i=0;i<=1; ++i) {//delmu
+                            for(int j=0; j<=1; ++j) { //hel0
+                                Atmp2 = cuCmulfc((DZ_[(S2-1)/2][k][m]), make_cuFloatComplex((AZRe_[i][j][m]), (AZIm_[i][j][m])));
+                                //Atmp2 = make_cuFloatComplex((pp1[ip+( (i * 12 * 2 + j * 12 + m) * 2) * N_size]), 
+                                //(pp1[ip+((i * 12 * 2 + j * 12 + m) * 2 + 1) * N_size]));
+                                //Atmp2 = cuCmulfc((pp2[ip+( ((S2-1)/2) * 12 * 2 + k * 12 + m) * N_size]),Atmp2);
+                                HZ[irZ][4*i+2*j+k] = cuCaddf( HZ[irZ][4*i+2*j+k], cuCmulf(Atmp2,ampCoff) );		
+                            }
+                        }
+                        m++;	    
+                    }
+                }
+            }
+        }
+        ir++;
+        irZ++;
+    }
+    int splcount0 = splcount;
+    //Calculate smeared line shapes
+    //  float mres = 0.00001;
+    float mres = _mres0+mjpsip*(_mres1+mjpsip*_mres2);
+    float smear_binwidth = mres*_smear_nsigmas*2/_smear_nbins;
+    float mjpsip_smear;
+    int iPc;
+    int jPc;
+    int iir;
+    for(int smear_ibin=0; smear_ibin<_smear_nbins; smear_ibin++){
+        iPc = 0;
+        jPc = 0;
+        iir = 0;
+        splcount = splcount0;
+        mjpsip_smear = -_smear_nsigmas*mres+smear_binwidth*smear_ibin+smear_binwidth*0.5f;
+        float weight_smear = gauss_res(mjpsip_smear, mres)*smear_binwidth;
+        float2 AKM[4][MYZN];
+        AKM[0][0]=make_cuFloatComplex(0.0f,0.0f);
+        AKM[1][0]=make_cuFloatComplex(0.0f,0.0f);
+        AKM[2][0]=make_cuFloatComplex(0.0f,0.0f);
+        AKM[3][0]=make_cuFloatComplex(0.0f,0.0f);
+        int ikmcount[]={0,0,0,0};
+
+        while ( iPc<NZ )  {
+            iir = NR + iPc;  
+            im0 = d_paraList[iir*nset+MASS];
+            ig0 = d_paraList[iir*nset+WIDTH];
+            iS2 = (int) (d_paraList[iir*nset+SPIN]);
+            iLR = (int)(d_paraList[iir*nset+LRESON]);
+            itype = (int) (d_paraList[iir*nset+TYPE]);
+            iS = (float)iS2/2.f;
+
+            //splcount = para_size+vamp_size;
+            switch (itype) {
+                case MODELINDEPENDENT:
+                    {
+                        iBW = ModelIndependentWave(&d_paraList[splcount], mjpsip+mjpsip_smear);
+                        im0 = -0.5f;
+                        //printf("Spn Defined \n");
+                        splcount += 9*NUMSPZ;
+                        break;
+                    }       
+                case BREITWIGNER:
+                    {iBW = BW_AMPZ(im0,ig0,mjpsip+mjpsip_smear,iLR); break;}
+                case REVISEDKMATRIX:
+                    {iBW = Revised_KMAMP(d_paraList, mjpsip+mjpsip_smear, iir, NR, NR+NZ, 1); break;}
+                case TRIANGLE:
+                    { iBW = GetCusp_AMP(im0,ig0,mjpsip+mjpsip_smear); break; }           
+                case KMATRIX:
+                    {
+                        int ik(0);
+                        if(iS2==3) ik=1;
+                        if(iLR>0) ik=ik+2;
+                        if(cuCabsf(AKM[ik][0])<1e-10f) {
+                            KMatrix(mjpsip+mjpsip_smear,d_paraList, iS2, ((iLR>0)?1:-1) ,NR, NR+NZ, kmcount, ik, AKM[ik]);
+                        }
+                        iBW = AKM[ik][ikmcount[ik]];
+                        ikmcount[ik]++; 	  
+                        break;
+                    }
+            }
+            iBterm = BTermZ(iS, mjpsip+mjpsip_smear, im0)*weight_smear;
+            iBW = cuCmulfc( iBterm, iBW ) ;
+            BWPc_tmp[iPc] = iBW;
+            BW1Pc[iPc] = cuCaddf(iBW, BW1Pc[iPc]);
+            iPc++;
+        }
+        iPc = 0;
+        while ( iPc<NZ )  {
+            jPc = 0; 
+            while ( jPc<NZ )  {
+                iBW = BWPc_tmp[iPc];
+                jBW = cuCmulfc(1.f/weight_smear, BWPc_tmp[jPc]);
+                BW2PcRR[iPc][jPc] += iBW.x * jBW.x;//weight involved in iBW, float counted.
+                BW2PcII[iPc][jPc] += iBW.y * jBW.y;
+                BW2PcIR[iPc][jPc] += iBW.y * jBW.x;
+                BW2PcRI[iPc][jPc] += iBW.x * jBW.y;
+                jPc++;   
+            }
+            iPc++;
+        }
+    }
+    //  printf("BW1Pc[7] = %f, iBW=%f \n",cuCabsf2(BW1Pc[7]), cuCabsf2(iBW));
+
+    //test
+    //  printf("wmzwmz try debug *********  \n");
+    //  float2 Hnew[8];
+    //  for(int i=0; i<8; i++){
+    //    Hnew[i] = make_cuFloatComplex(0.0,0.0);
+    //    //Hnew[i] = HL[i];
+    //    for(int j=0; j<NZ; j++){
+    //      float2 ampZ;
+    //      ampZ = cuCmul(BW1Pc[j], HZ[j][i]);
+    //      if(j==3) Hnew[i] = cuCadd(ampZ, Hnew[i]);
+    //    }
+    //    printf("wmzwmz try debug diff new and old H, newRe = %f, oldRe=%f, newIm=%f, oldIm = %f \n", Hnew[i].x,H[i].x, Hnew[i].y, H[i].y);
+    //  }
+    //test end
+    float H_tot(0.f);
+    float2 Amp1L;
+    float2 Amp1Pc;
+    for(int k=0; k<=1; ++k) {
+        for(int i=0; i<=1; ++i){
+            for(int j=0; j<=1; ++j){
+                H_tot += cuCabsf2(HL[4*i+2*j+k]);
+                //         HL_new[4*i+2*j+k] += cuCabsf2(HL[4*i+2*j+k]);
+                //Inteference between Pc and L*
+                int iPc = 0;
+                while (iPc < NZ){
+                    //        float2 BW1Pc_smear;
+                    //          BW1Pc_smear = make_cuFloatComplex(0.0,0.0); 
+                    //Do the convolution on BW1Pc_smear 
+                    //            BW1Pc_smear = BW1Pc[iPc];
+                    Amp1Pc = cuCmulf(BW1Pc[iPc], HZ[iPc][4*i+2*j+k]);
+                    Amp1L = HL[4*i+2*j+k];
+                    H_tot += 2*(Amp1Pc.x * Amp1L.x + Amp1Pc.y * Amp1L.y);
+                    //            HInte_new[4*i+2*j+k] += 2*(Amp1Pc.x * Amp1L.x + Amp1Pc.y * Amp1L.y);
+                    int jPc = 0;
+                    while (jPc < NZ){
+                        //Do the convolution on BW2Pc_smear 
+                        H_tot += (BW2PcRR[iPc][jPc] + BW2PcII[iPc][jPc]) * (HZ[iPc][4*i+2*j+k].x*HZ[jPc][4*i+2*j+k].x+HZ[iPc][4*i+2*j+k].y*HZ[jPc][4*i+2*j+k].y)
+                            +  (BW2PcIR[iPc][jPc] - BW2PcRI[iPc][jPc]) * (HZ[iPc][4*i+2*j+k].x*HZ[jPc][4*i+2*j+k].y-HZ[iPc][4*i+2*j+k].y*HZ[jPc][4*i+2*j+k].x);
+                        //              HPc_new[4*i+2*j+k] += (BW2PcRR[iPc][jPc] + BW2PcII[iPc][jPc]) * (HZ[iPc][4*i+2*j+k].x*HZ[jPc][4*i+2*j+k].x+HZ[iPc][4*i+2*j+k].y*HZ[jPc][4*i+2*j+k].y)
+                        //                                 +  (BW2PcIR[iPc][jPc] - BW2PcRI[iPc][jPc]) * (HZ[iPc][4*i+2*j+k].x*HZ[jPc][4*i+2*j+k].y-HZ[iPc][4*i+2*j+k].y*HZ[jPc][4*i+2*j+k].x);
+                        //HPc_new[4*i+2*j+k] +=  (AnglePc1.x * AnglePc2.x + AnglePc1.y * AnglePc2.y);
+                        jPc++;
+                    }
+
+                    iPc++;
+                }
+            }
+        }
+    }
+    //  for(int hehe=0; hehe<8; hehe++){
+    //    float L_old = cuCabsf2(HL_old[hehe]);
+    //    float Pc_old = cuCabsf2(HPc_old[hehe]);
+    //    float Inte_old = cuCabsf2(H[hehe]) - L_old - Pc_old;
+    //    printf("wmzwmz try debug L_old = %f, Pc_old = %f, Inte_old = %f, L_new = %f, Pc_new = %f, Inte_new = %f \n", L_old, Pc_old, Inte_old, HL_new[hehe], HPc_new[hehe], HInte_new[hehe]);
+    //  }
+    //  printf("wmzwmz try debug mjpsip=%f,mjpsip_smear=%f, BW=%f \n",pp->mjpsip, mjpsip_smear, BW);
+    return H_tot;// (H_tot>1e-10f)?H_tot:1e-10f;
+    //  return  (cuCabsf2(H[0]) + cuCabsf2(H[1])
+    //	   + cuCabsf2(H[2]) + cuCabsf2(H[3])
+    //	   + cuCabsf2(H[4]) + cuCabsf2(H[5])
+    //	   + cuCabsf2(H[6]) + cuCabsf2(H[7]));
+}
+
+/*
+__global__ void kernel_store_fx(const float * float_pp,const float *d_paraList, int para_size, 
+        int vamp_size, int paraSpline_size, int paraKM_size, double * d_fx,int end,
+        int begin, int NUMLz, int NUMPc)
+{
+  int index = blockDim.x * blockIdx.x + threadIdx.x;
+
+  //使用shared memory 开辟动态内存
+  //   不知道内存大小是使用，<<<>>>第三个变量给大小
+  extern __shared__ float sh_paraList[];
+  int total_size = para_size+vamp_size+paraSpline_size+paraKM_size;//
+  for(int i=0;i<total_size;i++)
+      sh_paraList[i]=d_paraList[i];
+
+
+  if(index<end-begin && index>= 0)
+  {
+    //three float
+    const int pwa_paras_size = (int(sizeof(cu_Jpsihh_dlz) / 32) +1)*8 ;
+    cu_Jpsihh_dlz * pp= (cu_Jpsihh_dlz *)&float_pp[index*pwa_paras_size];
+
+    //将各个参数传到gpu中的内存后，调用子函数calEva
+    //      if(1){
+    if(pp->w <= -1000.f){
+        //if(1) {
+        //        if(0) {
+        if(pp->mjpsip > 4.2f && pp->mjpsip < 4.65f) {
+            //changed for testing
+            d_fx[index] = GetAmp2sSMR(pp, sh_paraList,para_size, vamp_size, paraSpline_size, NUMLz, NUMPc) ;
+            //        d_fx[index] = GetAmp2s(pp, sh_paraList,para_size, vamp_size, NUMLz, NUMPc) ;
+            if(d_fx[index]<0) printf("\n WSM m:%f, fx[%d]:%f\n",pp->mjpsip, index,d_fx[index]);	  
+        }
+        else{
+            d_fx[index] = GetAmp2s(pp, sh_paraList,para_size, vamp_size, paraSpline_size, NUMLz, NUMPc);
+            if(d_fx[index]<0) printf("\n NSM m:%f, fx[%d]:%f\n",pp->mjpsip, index,d_fx[index]);	  
+        }
+
+        //        d_fx[index] = GetAmp2s(pp, sh_paraList,para_size, vamp_size, NUMLz, NUMPc,0);
+    }
+    else{
+        //        d_fx[index] = GetAmp2sSMR(pp, sh_paraList,para_size, vamp_size, NUMLz, NUMPc) * (pp->w) ;
+        d_fx[index] = GetAmp2s(pp, sh_paraList,para_size, vamp_size, paraSpline_size, NUMLz, NUMPc) * (pp->w);
+    }
+    //d_fx[index] = GetAmp2s(pp, sh_paraList,para_size, vamp_size, NUMLz, NUMPc,0) * (pp->w);
+    //if(!(d_fx[index]==d_fx[index])){
+    //        printf("wmzwmz try debug w=%f,mkp=%f \n",pp->w, pp->mkp);
+    //}
+    //printf("%dgpu :: %.7f\n",i,pp->wu[0]);
+  }
+}*/
+
+
+__global__ void kernel_store_fx_SMR(const float * float_pp, const float * float_pp1, const float * float_pp2, const float *d_paraList, int para_size, 
+    int vamp_size, int paraSpline_size, int paraKM_size, double * d_fx,int end,
+    int begin, int NUMLz, int NUMPc, int N_size)
+{
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    if(index<end-begin && index>= 0){
+        //const int pwa_paras_size = (int(sizeof(cu_Jpsihh_dlz) / 32) +1)*8 ;
+        //cu_Jpsihh_dlz * pp= (cu_Jpsihh_dlz *)&float_pp[index*pwa_paras_size];
+        //d_fx[index] = GetAmp2sSMR(pp, d_paraList,para_size, vamp_size, paraSpline_size, NUMLz, NUMPc) ;
+        d_fx[index] = GetAmp2sSMR(float_pp, float_pp1, float_pp2, d_paraList,para_size, vamp_size, paraSpline_size, NUMLz, NUMPc, index, N_size) ;
+        //mjpsip
+        if(d_fx[index]<0) printf("\n WSM m:%f, fx[%d]:%f\n", float_pp[index+N_size], index,d_fx[index]);	
+        //printf("dfx: %f\n", d_fx[index]);
+        //printf("index: %d\n", index);
+    }
+        
+}
+
+__global__ void kernel_store_fx_NoSMR(const float * float_pp, const float * float_pp1, const float * float_pp2, const float *d_paraList, int para_size, 
+    int vamp_size, int paraSpline_size, int paraKM_size, double * d_fx,int end,
+    int begin, int NUMLz, int NUMPc, int N_size, int index_flag)
+{
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    if(index<end-begin && index>= 0){
+        //const int pwa_paras_size = (int(sizeof(cu_Jpsihh_dlz) / 32) +1)*8 ;
+        //cu_Jpsihh_dlz * pp= (cu_Jpsihh_dlz *)&float_pp[(begin+index)*pwa_paras_size];
+        //double d_fx_temp = GetAmp2s(pp, d_paraList,para_size, vamp_size, paraSpline_size, NUMLz, NUMPc);
+        index = (index_flag==1) ? index: index+begin;
+        double d_fx_temp = GetAmp2s(float_pp, float_pp1, float_pp2, d_paraList,para_size, vamp_size, paraSpline_size, NUMLz, NUMPc, index, N_size);
+        if (float_pp[index+ 2*N_size] <= -1000.f){
+            d_fx[index] = d_fx_temp;
+        }
+        else{
+            d_fx[index] = d_fx_temp*float_pp[index+ 2*N_size];
+        }
+        //mjpsip
+        if(d_fx_temp<0) printf("\n NSM m:%f, fx[%d]:%f\n", float_pp[index+N_size], index, d_fx_temp);
+        //printf("index: %d\n", index+Nda_SMR);
+    }   
+}
+
+void fake_kernel_store_fx(const float * float_pp, const float * float_pp1, const float * float_pp2, const float *d_paraList, int para_size, 
+    int vamp_size, int paraSpline_size, int paraKM_size, double * d_fx,int end,
+    int begin, int NUMLz, int NUMPc, int Nda_SMR, int N_size)
+{
+    //if(begin>=Nda_SMR) break;
+    //printf("hhhhhhh NDA:%d,begin%d\n",Nda_SMR,begin);
+    int index_flag = 1;
+    if(begin<Nda_SMR){
+        //printf("hhhhhhhhhhhhhhhhhhh!!!!1\n");
+        int N_thread=min(end,Nda_SMR)-begin;
+        int threadsPerBlock = BLOCK_SIZE;
+        int blocksPerGrid =(N_thread + threadsPerBlock - 1) / threadsPerBlock;
+        kernel_store_fx_SMR<<<blocksPerGrid, threadsPerBlock>>>(float_pp, float_pp1, float_pp2, d_paraList,para_size,vamp_size, paraSpline_size, paraKM_size, d_fx,N_thread+begin,begin, NUMLz, NUMPc, N_size);
+        index_flag=0;
+    }
+    if(end>Nda_SMR){
+        //printf("hhhhhhhhhhhhhhhhhhh!!!!2\n");
+        int N_thread = end-max(Nda_SMR,begin);
+        //printf("hhhhhhhhhh, %d, %d\n", end, N_thread);
+        int threadsPerBlock = BLOCK_SIZE;
+        int blocksPerGrid =(N_thread + threadsPerBlock - 1) / threadsPerBlock;
+        kernel_store_fx_NoSMR<<<blocksPerGrid, threadsPerBlock>>>(float_pp, float_pp1, float_pp2, d_paraList,para_size,vamp_size, paraSpline_size, paraKM_size, d_fx,end,end-N_thread, NUMLz, NUMPc, N_size,index_flag);
+    }
+}
+
+// begin of chenchen
+__device__ double GetNll_Bp(double fx, double sw) {
+    return (fx>0) ? log(fx)*sw : -1e12;
+}
+
+__global__ void kernel_store_nll_Bp(const double *fx, const float *sw, double *d_nll, int end, int begin)
+{
+    int index = blockDim.x * blockIdx.x + threadIdx.x;
+    if(index<end-begin && index>= 0)
+    {
+        d_nll[index] = GetNll_Bp(fx[index], sw[index]);
+    }
+}
+//end of chenchen
+
+double host_store_fx(std::vector<float *>d_float_pp, std::vector<float *>d_float_pp1, std::vector<float *>d_float_pp2, std::vector<float *>d_float_sw, float *h_paraList,int para_size, int vamp_size, int paraSpline_size, double *h_fx,int end,int begin, int Nda, int Nda_SMR, int NUMLz, int NUMPc, double &mynll, double SumW, double sumW_data)
+{
+    //init Ns
+    //Ns为分段数组，第i个gpu所处理的线程序号范围为:[ Ns[i] , Ns[i+1] ) 
+    //int Ns[DEVICE_NUM+1];
+    //malloc memory
+    //zhihong
+    ////double *d_fx[DEVICE_NUM];
+    ////float *d_paraList[DEVICE_NUM];
+    //  float *d_vamp[DEVICE_NUM];
+    //  float *d_paraSpline[DEVICE_NUM];
+    int total_para_size = para_size+vamp_size+paraSpline_size+(Npmax+NKMC)*NKMC*4;
+    //  printf("km size %i total size %i\n",(Npmax+NKMC)*NKMC*2, total_para_size);
+    //动态分配shared memory 的大小：
+    int size_paraList=total_para_size*sizeof(float);  
+
+    if (once_flag_config==1){
+        Ns[0]=0;
+        for(int i=1;i<DEVICE_NUM;i++)
+        {
+            Ns[i]=Ns[i-1]+end/DEVICE_NUM;
+        }
+        Ns[DEVICE_NUM]=end;
+        for(int i=0;i<DEVICE_NUM;i++)
+        {
+            nvtxRangePush("malloc");
+            CUDA_CALL( cudaSetDevice(i+iDevice) );
+            int N_thread=Ns[i+1]-Ns[i];
+            CUDA_CALL(cudaMalloc((void **)&(d_fx[i]),N_thread * sizeof(double)));
+            CUDA_CALL(cudaMalloc((void **)&(d_paraList[i]),size_paraList));
+            //      CUDA_CALL(cudaMalloc((void **)&(d_vamp[i]),vamp_size * sizeof(float)));        
+            //      CUDA_CALL(cudaMalloc((void **)&(d_paraSpline[i]),paraSpline_size * sizeof(float))); 
+            CUDA_CALL(cudaMalloc((void **)&(d_nll[i]),N_thread * sizeof(double)));
+            nvtxRangePop();             
+        }
+        once_flag_config = 0;
+    }
+
+
+    //memcpy d_paraList
+    for(int i=0;i<DEVICE_NUM;i++)
+    {
+        CUDA_CALL(cudaSetDevice(i+iDevice) );
+        //使用异步函数.
+        CUDA_CALL(cudaMemcpyAsync(d_paraList[i] , h_paraList, size_paraList, cudaMemcpyHostToDevice));
+    }
+
+    int threadsPerBlock = BLOCK_SIZE;
+    for(int i=0;i<DEVICE_NUM;i++)
+    {
+      CUDA_CALL(cudaSetDevice(i+iDevice) );
+      int N_thread=Ns[i+1]-Ns[i];
+      int N_size= (N_thread/32+1)*32;
+      //int blocksPerGrid =(N_thread + threadsPerBlock - 1) / threadsPerBlock;
+      nvtxRangePush("kernel");
+      //kernel_store_fx<<<blocksPerGrid, threadsPerBlock>>>(d_float_pp[i], d_paraList[i],para_size,vamp_size, paraSpline_size, d_fx[i],Ns[i+1],Ns[i], NUMLz, NUMPc);
+      //kernel_store_fx<<<blocksPerGrid, threadsPerBlock,size_paraList>>>(d_float_pp[i], d_paraList[i],para_size,vamp_size, paraSpline_size, (Npmax+NKMC)*NKMC*4, d_fx[i],Ns[i+1],Ns[i], NUMLz, NUMPc);
+      fake_kernel_store_fx(d_float_pp[i], d_float_pp1[i], d_float_pp2[i], d_paraList[i],para_size,vamp_size, paraSpline_size, (Npmax+NKMC)*NKMC*4, d_fx[i],Ns[i+1],Ns[i], NUMLz, NUMPc, Nda_SMR, N_size);
+      nvtxRangePop();
+    }
+    /*
+    for(int i=0;i<DEVICE_NUM;i++)
+    {
+        if(Ns[i]>=Nda) break;
+        CUDA_CALL(cudaSetDevice(i+iDevice) );
+        int N_thread=min(Ns[i+1],Nda)-Ns[i];
+        CUDA_CALL(cudaMemcpyAsync(&h_fx[Ns[i]] , d_fx[i], N_thread * sizeof(double), cudaMemcpyDeviceToHost));
+    }*/
+    double sumint(0.);
+    for(int i=0;i<DEVICE_NUM;i++)
+    {
+        if(Ns[i+1]<=Nda) continue;//For MC
+        CUDA_CALL(cudaSetDevice(i+iDevice) );
+        int N_thread=Ns[i+1]-Ns[i];
+        thrust::device_ptr<double> dev_ptr(d_fx[i]);
+        sumint = thrust::reduce(dev_ptr+max(Nda-Ns[i],0), dev_ptr + N_thread, sumint, thrust::plus<double>());
+        //      CUDA_CALL(cudaMemcpyAsync(&h_fx[Ns[i]] , d_fx[i], N_thread * sizeof(float), cudaMemcpyDeviceToHost));
+    }
+    //    printf("sum device %.10f \n",sumint);
+
+    for(int i=0;i<DEVICE_NUM;i++)
+    {
+        if(Ns[i]>=Nda) continue;
+        CUDA_CALL(cudaSetDevice(i+iDevice) );
+        int N_thread=min(Ns[i+1]-Ns[i], Nda-Ns[i]);
+        if(!N_thread) continue; // no event to process
+        int blocksPerGrid =(N_thread + threadsPerBlock - 1) / threadsPerBlock;
+        nvtxRangePush("kernel_store_nll_Bp");
+        kernel_store_nll_Bp<<<blocksPerGrid, threadsPerBlock>>>(d_fx[i], d_float_sw[i], d_nll[i],Ns[i]+N_thread, Ns[i]); 
+        nvtxRangePop();
+    }
+
+    // nll sum of data 
+    double inttt = sumint/SumW;
+    double nll_shift = NLL_SHIFT;
+    nll_shift += sumW_data*log(inttt);
+    double nll_data = 0; 
+    for(int i=0;i<DEVICE_NUM;i++)
+    {
+        if(Ns[i]>=Nda) continue;
+        CUDA_CALL(cudaSetDevice(i+iDevice) );
+        int N_thread=min(Ns[i+1]-Ns[i], Nda-Ns[i]);
+        thrust::device_ptr<double> dev_ptr(d_nll[i]);
+        nvtxRangePush("log sum of data");
+        nll_data = thrust::reduce(dev_ptr, dev_ptr + N_thread, nll_data, thrust::plus<double>());
+        nvtxRangePop();
+    }
+    mynll = nll_shift - nll_data;
+    // end of chenchen
+    return sumint;
+}
+
+/*
+//在gpu中为pwa_paras开辟空间
+void cu_malloc_h_pp(float *h_float_pp,float *&d_float_pp,int length,int device)
+{
+    //Ns为分段数组，第i个gpu所处理的线程序号范围为:[ Ns[i] , Ns[i+1] ) 
+    int Ns[DEVICE_NUM+1];
+    Ns[0]=0;
+    for(int i=1;i<DEVICE_NUM;i++)
+    {
+        Ns[i]=Ns[i-1]+length/DEVICE_NUM;
+    }
+    Ns[DEVICE_NUM]=length;
+    int deviceCount;
+    CUDA_CALL( cudaGetDevice(&deviceCount) );
+    printf("Num GPU %i %i\n",deviceCount, device);
+    CUDA_CALL( cudaSetDevice(device+iDevice) );
+    //  CUDA_CALL( cudaDeviceSynchronize() );
+    //  CUDA_CALL( cudaThreadSynchronize() );  
+    int N_size = Ns[device+1]-Ns[device];
+    size_t mem_size = (int(sizeof(cu_Jpsihh_dlz)/32)+1)*32;// * N_size;
+    int array_size = (int(sizeof(cu_Jpsihh_dlz)/32)+1)*32/sizeof(float);
+    printf("size to locate %d %d\n", mem_size, N_size);
+    CUDA_CALL(cudaMalloc((void **)&d_float_pp, mem_size * N_size));
+    CUDA_CALL(cudaMemcpy(d_float_pp , &h_float_pp[array_size*Ns[device]], mem_size * N_size, cudaMemcpyHostToDevice));
+}*/
+
+void cu_malloc_h_pp(float *h_float_pp,float *&d_float_pp,int mem_length, int device){
+    //int deviceCount;
+    //CUDA_CALL( cudaGetDevice(&deviceCount) );
+    //printf("Num GPU %i %i\n",deviceCount, device);
+    CUDA_CALL( cudaSetDevice(device+iDevice) );
+    printf("size to locate device: %d\n", device);
+
+    CUDA_CALL(cudaMalloc((void **)&d_float_pp, mem_length));
+    CUDA_CALL(cudaMemcpy(d_float_pp , &h_float_pp[0], mem_length, cudaMemcpyHostToDevice));
+}
+
+void cu_Free_pp(std::vector<float *>d_float_pp, std::vector<float *>d_float_pp1, std::vector<float *>d_float_pp2)
+{
+    if(d_float_pp.size()!=DEVICE_NUM) return;
+    if(d_float_pp1.size()!=DEVICE_NUM) return;
+    if(d_float_pp2.size()!=DEVICE_NUM) return;
+    for(int i=0;i<DEVICE_NUM;i++)
+    {
+        CUDA_CALL(cudaSetDevice(i+iDevice) );
+        if(d_float_pp[i]) CUDA_CALL(cudaFree(d_float_pp[i]));
+        if(d_float_pp1[i]) CUDA_CALL(cudaFree(d_float_pp1[i]));
+        if(d_float_pp2[i]) CUDA_CALL(cudaFree(d_float_pp2[i]));
+        CUDA_CALL(cudaFree(d_fx[i]));
+        CUDA_CALL(cudaFree(d_paraList[i]));
+        CUDA_CALL(cudaFree(d_nll[i]));
+    }
+    once_flag_config = 1;
+}

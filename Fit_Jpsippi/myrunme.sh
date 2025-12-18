@@ -1,0 +1,1 @@
+../bin/RCModel0 --Pc4440 1,-1 --Pc4457 3,-1 --Pc4312 1,-1 --Pc4500 3,1 -d ../../myaman/datasets/forfit/data.root -m ../../myaman/datasets/forfit/mc.root -c err/PRC_Zcs4000Cons.err -f func/yujie_test.func -r fitresults/yujie_test.root -h history/yujie_test.root --seed 42 --randomLs --randomPc --largeRandom
