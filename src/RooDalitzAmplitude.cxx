@@ -784,8 +784,8 @@ Bool_t RooDalitzAmplitude::kine_limitsZ(float mjpsip) const {
     return true;
 }
 
-Bool_t RooDalitzAmplitude::kine_limitsX(float mjpsik) const {
-    if ((mjpsik < m_jpsi + m_K) || (m_lb < mjpsik + m_p))
+Bool_t RooDalitzAmplitude::kine_limitsX(float mjpsipi) const {
+    if ((mjpsik < m_jpsi + m_K) || (m_lb < mjpsipi + m_p))
         return false;
     return true;
 }
