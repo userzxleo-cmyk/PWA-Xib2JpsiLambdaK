@@ -121,6 +121,6 @@ $(BINDIR)execute.o: $(BINDIR)config.o $(BINDIR)fit.o $(BINDIR)parameter.o $(BIND
 
 #-------------------------------------------------------
 clean:
-		@rm -f bin/tpanal ${SRCDIR}._* ${SRCDIR}*~ core* $(BINDIR)*.o $(BINDIR)*.so ._*
+		@rm -f bin/tpanal ${SRCDIR}._* ${SRCDIR}*~ core* $(BINDIR)*.o $(BINDIR)*.so ._* $(BINDIR)RCModel0
 		@echo cleaned
 # DO NOT DELETE
