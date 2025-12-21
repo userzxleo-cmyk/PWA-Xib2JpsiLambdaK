@@ -7,9 +7,9 @@ and these intermediate varaibles are not changed
 */
 
 struct cu_Jpsihh_dlz{
-  float mppi;
+  float mpk;
   float mjpsip;
-  float mjpsipi;
+  float mjpsik;
   float w;
   float ARe[2][2][6];
   float AIm[2][2][6];

@@ -28,7 +28,7 @@
 
 class Jpsihh_dlz {
 public:
-  double mppi;
+  double mpk;
   double mjpsip;
   double theta;
   double theta1;
@@ -61,9 +61,9 @@ private:
 
 class CEvent {
 public:
-  double mppi;
+  double mpk;
   double mjpsip;
-  double mjpsipi;
+  double mjpsik;
   double cosTh_Lb;
   double cosTh_L;
   double cosTh_Jpsi;
@@ -158,7 +158,7 @@ public:
   bool BW_AMPZ(double m_r, double gamma_r, double mpp, int LR,
 	      double &ampl_r, double &ampl_i) const;
   Double_t getp(double, double, double ) const;
-  void filldlz(Jpsihh_dlz &dlz, Double_t xmppi, Double_t ,
+  void filldlz(Jpsihh_dlz &dlz, Double_t xmpk, Double_t ,
 	       Double_t xcostheta1, Double_t xcostheta2,
 	       Double_t xphi1, Double_t xphi2, 
 	       Double_t, Double_t, Double_t, Double_t, Double_t, Double_t, Double_t, Double_t,
@@ -250,7 +250,7 @@ protected:
    
   //For efficiencies/CFit
 //  bool eff_by_binning;
-  double mppi_min, mppi_max;
+  double mpk_min, mpk_max;
 //  double mJpsip_min, mJpsip_max;
   //mc, signal 
   double mc_nBinY, mc_cos_wBinY, mc_phi_wBinY, mc_nBinX, mc_wBinX;
@@ -277,7 +277,7 @@ protected:
   Int_t NZ;  
   double sumW;
   double m_lb;
-  double m_pi;
+  double m_k;
   double m_p;
   double m_jpsi;
 
