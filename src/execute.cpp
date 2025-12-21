@@ -31,9 +31,9 @@ namespace Execution{
         // Persist the variables outside the scope of this function
         auto& memory_manager = Memory::get_manager<RooRealVar>();
         std::vector<RooRealVar*> base_observables = {
-            memory_manager.create("mppi","",1.0,2.6),
+            memory_manager.create("mpk","",1.0,2.6),
             memory_manager.create("mjpsip","",4.,5.5),
-            memory_manager.create("mjpsipi","",3.2,4.7),
+            memory_manager.create("mjpsik","",3.2,4.7),
             memory_manager.create("cosTheta_L","cosTheta_L",-1,1),
             memory_manager.create("cosTheta_Jpsi","cosTheta_Jpsi",-1,1),
             memory_manager.create("cosTheta_Lb","cosTheta_Lb",-1,1),
@@ -131,7 +131,7 @@ namespace Execution{
             "",
             *observables_with_weights,
             RooFit::Import(*data_tree),
-            RooFit::Cut("mppi>1.0778425&&mppi<2.5227&&mjpsip>4.0351721&&mjpsip<5.4800296"),
+            RooFit::Cut("mpk>1.0778425&&mpk<2.5227&&mjpsip>4.0351721&&mjpsip<5.4800296"),
             RooFit::WeightVar(*nsig_sw)
         );
         data_file.Close();

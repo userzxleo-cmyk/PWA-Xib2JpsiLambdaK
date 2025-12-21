@@ -176,7 +176,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     std::cout << "GPU defined " << std::endl;
 #endif
     m_lb = 5.61951;
-    m_pi = 0.13957039;
+    m_k = 0.493677;
     m_p = 0.938272046;
     m_jpsi = 3.096916;
     m_chic1 = 3.51067;
@@ -265,7 +265,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     //        std::cout << "Done _resParCache" << std::endl;
     // #endif
     double costheta, costheta1, costheta2, phi1, phi2;
-    double mppi, sw, mjpsip, mjpsipi;
+    double mpk, sw, mjpsip, mjpsik;
     double phiZ;
     double phiMu;
     double phiPsi;
@@ -284,7 +284,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     double X_cosTheta_p;
     double X_alpha_Mu;
     if (MYXN == 0) {
-        mjpsipi = 4.4;
+        mjpsik = 4.4;
         X_cosTheta_Lb = 0.;
         X_phiX = 0.;
         X_cosTheta_X = 0.;
@@ -324,13 +324,13 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         // Jpsihh_dlz xdlz;// = *Ixdlz;
 
         // row->Print("V");
-        mppi = ((RooAbsReal *)row->find("mppi"))->getVal();
-        // if(!kine_limits(mppi)) { std::cout << "why " << std::endl;}
+        mpk = ((RooAbsReal *)row->find("mLk"))->getVal();
+        // if(!kine_limits(mpk)) { std::cout << "why " << std::endl;}
 
         costheta = ((RooAbsReal *)row->find("cosTheta_Lb"))->getVal();
         costheta1 = ((RooAbsReal *)row->find("cosTheta_L"))->getVal();
         costheta2 = ((RooAbsReal *)row->find("cosTheta_Jpsi"))->getVal();
-        phi1 = ((RooAbsReal *)row->find("phipi"))->getVal();
+        phi1 = ((RooAbsReal *)row->find("phiK"))->getVal();
         phi2 = ((RooAbsReal *)row->find("phiMu"))->getVal();
         costhetaB = ((RooAbsReal *)row->find("Z_cosTheta_Lb"))->getVal();
         costhetaZ = ((RooAbsReal *)row->find("Z_cosTheta_Z"))->getVal();
@@ -338,11 +338,11 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         phiZ = ((RooAbsReal *)row->find("Z_phiZ"))->getVal();
         phiPsi = ((RooAbsReal *)row->find("Z_phiJpsi"))->getVal();
         phiMu = ((RooAbsReal *)row->find("Z_phiMu"))->getVal();
-        costhetap = ((RooAbsReal *)row->find("cosTheta_p"))->getVal();
+        costhetap = ((RooAbsReal *)row->find("cosTheta_Lambda"))->getVal();
         alphaMu = ((RooAbsReal *)row->find("alpha_Mu"))->getVal();
-        mjpsip = ((RooAbsReal *)row->find("mjpsip"))->getVal();
+        mjpsip = ((RooAbsReal *)row->find("mjpsiL"))->getVal();
         if (MYXN != 0) {
-            mjpsipi = ((RooAbsReal *)row->find("mjpsipi"))->getVal();
+            mjpsik = ((RooAbsReal *)row->find("mjpsik"))->getVal();
             X_cosTheta_Lb = ((RooAbsReal *)row->find("X_cosTheta_Lb"))->getVal();
             X_phiX = ((RooAbsReal *)row->find("X_phiX"))->getVal();
             X_cosTheta_X = ((RooAbsReal *)row->find("X_cosTheta_X"))->getVal();
@@ -362,7 +362,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         sumW_data += data.weight();
 
         filldlz((*xdlz),
-                mppi,
+                mpk,
                 costheta,
                 costheta1,
                 costheta2,
@@ -385,7 +385,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
                 X_phiMu,
                 X_cosTheta_p,
                 X_alpha_Mu,
-                mjpsipi);
+                mjpsik);
         //    if ((xdlz->mjpsip > 4.2 && xdlz->mjpsip < 4.43) || (xdlz->mjpsip > 4.47 &&
         //    xdlz->mjpsip < 4.6))
         if (xdlz->mjpsip > 4.2 && xdlz->mjpsip < 4.6) {
@@ -415,13 +415,13 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         smcdata->Add(mcdata);
     }
 
-    smcdata->SetBranchAddress("mppi", &mppi);
-    smcdata->SetBranchAddress("mjpsip", &mjpsip);
+    smcdata->SetBranchAddress("mLk", &mpk);
+    smcdata->SetBranchAddress("mjpsiL", &mjpsip);
     smcdata->SetBranchAddress("cosTheta_Lb", &costheta);
     smcdata->SetBranchAddress("cosTheta_L", &costheta1);
     smcdata->SetBranchAddress("cosTheta_Jpsi", &costheta2);
     //
-    smcdata->SetBranchAddress("phipi", &phi1);
+    smcdata->SetBranchAddress("phiK", &phi1);
     smcdata->SetBranchAddress("phiMu", &phi2);
     smcdata->SetBranchAddress("Z_cosTheta_Lb", &costhetaB);
     smcdata->SetBranchAddress("Z_cosTheta_Z", &costhetaZ);
@@ -429,10 +429,10 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     smcdata->SetBranchAddress("Z_phiZ", &phiZ);
     smcdata->SetBranchAddress("Z_phiJpsi", &phiPsi);
     smcdata->SetBranchAddress("Z_phiMu", &phiMu);
-    smcdata->SetBranchAddress("cosTheta_p", &costhetap);
+    smcdata->SetBranchAddress("cosTheta_Lambda", &costhetap);
     smcdata->SetBranchAddress("alpha_Mu", &alphaMu);
     if (MYXN != 0) {
-        smcdata->SetBranchAddress("mjpsipi", &mjpsipi);
+        smcdata->SetBranchAddress("mjpsik", &mjpsik);
         smcdata->SetBranchAddress("X_cosTheta_Lb", &X_cosTheta_Lb);
         smcdata->SetBranchAddress("X_cosTheta_X", &X_cosTheta_X);
         smcdata->SetBranchAddress("X_cosTheta_Jpsi", &X_cosTheta_Jpsi);
@@ -455,12 +455,12 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
 
     for (int imc = 0; imc < smcnum; imc++) {
         smcdata->GetEntry(imc);
-        // mppi>2GeV
-        if (!kine_limits(mppi))
+        // mpk>2GeV
+        if (!kine_limits(mpk))
             continue;
         if (!kine_limitsZ(mjpsip))
             continue;
-        if (!kine_limitsX(mjpsipi))
+        if (!kine_limitsX(mjpsik))
             continue;
         Jpsihh_dlz *xdlz = new Jpsihh_dlz();
 
@@ -470,7 +470,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         //    costheta1 = -costheta1;
 
         filldlz((*xdlz),
-                mppi,
+                mpk,
                 costheta,
                 costheta1,
                 costheta2,
@@ -493,7 +493,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
                 X_phiMu,
                 X_cosTheta_p,
                 X_alpha_Mu,
-                mjpsipi,
+                mjpsik,
                 sw);
         sumW += sw;
         //    float fx(0);
@@ -542,7 +542,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const RooDalitzAmplitude &other, const ch
       _bprod(other._bprod), _selfscatter(other._selfscatter), _sa3(other._sa3), _sp3(other._sp3),
       _mynll(other._mynll), _mypnalty(other._mypnalty), _kmchanged(other._kmchanged), NR(other.NR),
       NZ(other.NZ), NX(other.NX), sumW(other.sumW), sumW_data(other.sumW_data), m_lb(other.m_lb),
-      m_pi(other.m_pi), m_p(other.m_p), m_jpsi(other.m_jpsi), m_chic1(other.m_chic1) {
+      m_k(other.m_k), m_p(other.m_p), m_jpsi(other.m_jpsi), m_chic1(other.m_chic1) {
     int n = PDLZ->size();
     std::cout << "new PDLZ size " << n << std::endl;
     //  pdlz = other.pdlz;
@@ -567,10 +567,10 @@ RooDalitzAmplitude::RooDalitzAmplitude(const RooDalitzAmplitude &other, const ch
     d_float_sw.resize(DEVICE_NUM);
     int i_End = other.PDLZ->size();
     // int array_num = sizeof(cu_Jpsihh_dlz) / sizeof(float);
-    int array_num = 111; // mppi, mjpsip, w, L* chain ARe, AIm, DL
+    int array_num = 111; // mpk, mjpsip, w, L* chain ARe, AIm, DL
     int array_num1 = 96; // Pc chain AZRe, AZIm
     int array_num2 = 96; // Pc chain DZ
-    int array_num3 = 97; // mjpsipi, Zcs chain AXRe, AXIm
+    int array_num3 = 97; // mjpsik, Zcs chain AXRe, AXIm
     int array_num4 = 96; // Zcs chain DX
     if (MYXN == 0) {
         array_num3 = 0;
@@ -616,7 +616,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const RooDalitzAmplitude &other, const ch
             // float *k = (float *)(*PDLZ)[i];
             // for (int j = 0; j < array_num; j++)
             //     h_float_pp[i * array_num + j] = (float)k[j];
-            h_float_pp[i][it_h_float_pp] = pp->mppi;
+            h_float_pp[i][it_h_float_pp] = pp->mpk;
             h_float_pp[i][it_h_float_pp + 1 * N_size] = pp->mjpsip;
             h_float_pp[i][it_h_float_pp + 2 * N_size] = pp->w;
 
@@ -675,7 +675,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const RooDalitzAmplitude &other, const ch
             it_h_float_pp = 0;
             for (int it = Ns[i]; it < Ns[i + 1]; it++) {
                 auto pp = (*PDLZ)[it];
-                h_float_pp3[i][it_h_float_pp] = pp->mjpsipi;
+                h_float_pp3[i][it_h_float_pp] = pp->mjpsik;
                 for (int ii = 0; ii < 2; ++ii) {
                     for (int j = 0; j < 2; ++j) {
                         for (int m = 0; m < 12; ++m) {
@@ -771,7 +771,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const RooDalitzAmplitude &other, const ch
 }
 
 Bool_t RooDalitzAmplitude::kine_limits(float mpp) const {
-    if (mpp < m_pi + m_p)
+    if (mpp < m_k + m_p)
         return false;
     if (mpp > m_lb - m_jpsi)
         return false;
@@ -779,13 +779,13 @@ Bool_t RooDalitzAmplitude::kine_limits(float mpp) const {
 }
 
 Bool_t RooDalitzAmplitude::kine_limitsZ(float mjpsip) const {
-    if ((mjpsip < m_jpsi + m_p) || (m_lb < mjpsip + m_pi))
+    if ((mjpsip < m_jpsi + m_p) || (m_lb < mjpsip + m_k))
         return false;
     return true;
 }
 
-Bool_t RooDalitzAmplitude::kine_limitsX(float mjpsipi) const {
-    if ((mjpsipi < m_jpsi + m_pi) || (m_lb < mjpsipi + m_p))
+Bool_t RooDalitzAmplitude::kine_limitsX(float mjpsik) const {
+    if ((mjpsik < m_jpsi + m_k) || (m_lb < mjpsik + m_p))
         return false;
     return true;
 }
@@ -885,9 +885,9 @@ void RooDalitzAmplitude::storeLineshape(const TString path) const {
     int nLz = Lz_indices.size();
 
     int n_points = 4096;
-    std::vector<float> h_mppi(n_points);
+    std::vector<float> h_mpk(n_points);
     for (size_t i = 0; i < n_points; i++) {
-        h_mppi[i] = (m_pi + m_p + i * (m_lb - m_jpsi - m_pi - m_p) / n_points);
+        h_mpk[i] = (m_k + m_p + i * (m_lb - m_jpsi - m_k - m_p) / n_points);
     }
 
     std::vector<float> h_KM_real(n_points * nLz);
@@ -898,7 +898,7 @@ void RooDalitzAmplitude::storeLineshape(const TString path) const {
     // TODO: configure indices
     cu_init_data(h_paraList, h_amp2s, _Nda);
 
-    host_store_lineshapeLsKM(h_mppi.data(),
+    host_store_lineshapeLsKM(h_mpk.data(),
                              h_KM_real.data(),
                              h_KM_imag.data(),
                              h_BW_real.data(),
@@ -915,9 +915,9 @@ void RooDalitzAmplitude::storeLineshape(const TString path) const {
     TFile file(path, "RECREATE");
     TTree tree("lineshape", "");
 
-    float mppi;
+    float mpk;
     std::map<TString, float> branch_values;
-    tree.Branch("mppi", &mppi, "mppi/F");
+    tree.Branch("mpk", &mpk, "mpk/F");
     for (size_t i = 0; i < nLz; i++) {
         TString name = resonance_names[i];
 
@@ -939,7 +939,7 @@ void RooDalitzAmplitude::storeLineshape(const TString path) const {
     }
 
     for (size_t i = 0; i < n_points; i++) {
-        mppi = h_mppi[i];
+        mpk = h_mpk[i];
         for (size_t iLz = 0; iLz < nLz; iLz++) {
             TString name = resonance_names[iLz];
             size_t index = iLz * n_points + i;
@@ -1320,7 +1320,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     smcdata->Add(mcdata);
 
     double costheta, costheta1, costheta2, phi1, phi2;
-    double mppi, sw, mjpsip, mass;
+    double mpk, sw, mjpsip, mass;
     double phiZ;
     double phiMu;
     double phiPsi;
@@ -1329,7 +1329,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     double costhetaPsi;
     double costhetaZ;
     double costhetap;
-    double mjpsipi;
+    double mjpsik;
     double eff;
 
     double X_cosTheta_Lb;
@@ -1342,7 +1342,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     double X_alpha_Mu;
 
     if (MYXN == 0) {
-        mjpsipi = 4.4;
+        mjpsik = 4.4;
         X_cosTheta_Lb = 0.;
         X_phiX = 0.;
         X_cosTheta_X = 0.;
@@ -1356,12 +1356,12 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     smcdata->SetBranchAddress("mass", &mass);
     if (fortoystudy)
         smcdata->SetBranchAddress("eff", &eff);
-    smcdata->SetBranchAddress("mppi", &mppi);
-    smcdata->SetBranchAddress("mjpsip", &mjpsip);
+    smcdata->SetBranchAddress("mLk", &mpk);
+    smcdata->SetBranchAddress("mjpsiL", &mjpsip);
     smcdata->SetBranchAddress("cosTheta_Lb", &costheta);
     smcdata->SetBranchAddress("cosTheta_L", &costheta1);
     smcdata->SetBranchAddress("cosTheta_Jpsi", &costheta2);
-    smcdata->SetBranchAddress("phipi", &phi1);
+    smcdata->SetBranchAddress("phiK", &phi1);
     smcdata->SetBranchAddress("phiMu", &phi2);
 
     smcdata->SetBranchAddress("Z_cosTheta_Lb", &costhetaB);
@@ -1370,12 +1370,12 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     smcdata->SetBranchAddress("Z_phiZ", &phiZ);
     smcdata->SetBranchAddress("Z_phiJpsi", &phiPsi);
     smcdata->SetBranchAddress("Z_phiMu", &phiMu);
-    smcdata->SetBranchAddress("cosTheta_p", &costhetap);
+    smcdata->SetBranchAddress("cosTheta_Lambda", &costhetap);
     smcdata->SetBranchAddress("alpha_Mu", &alphaMu);
     smcdata->SetBranchAddress(swname, &sw);
 
     if (MYXN != 0) {
-        smcdata->SetBranchAddress("mjpsipi", &mjpsipi);
+        smcdata->SetBranchAddress("mjpsik", &mjpsik);
         smcdata->SetBranchAddress("X_cosTheta_Lb", &X_cosTheta_Lb);
         smcdata->SetBranchAddress("X_cosTheta_X", &X_cosTheta_X);
         smcdata->SetBranchAddress("X_cosTheta_Jpsi", &X_cosTheta_Jpsi);
@@ -1403,10 +1403,10 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
         tree->Branch("eff", &eff, "eff/D");
     tree->Branch("sw_old", &sw, "sw_old/D");
     tree->Branch("mass", &mass, "mass/D");
-    tree->Branch("mppi", &mppi, "mppi/D");
+    tree->Branch("mpk", &mpk, "mpk/D");
     tree->Branch("mjpsip", &mjpsip, "mjpsip/D");
     if (MYXN != 0) {
-        tree->Branch("mjpsipi", &mjpsipi, "mjpsipi/D");
+        tree->Branch("mjpsik", &mjpsik, "mjpsik/D");
         tree->Branch("X_cosTheta_X", &X_cosTheta_X, "X_cosTheta_X/D");
     }
     tree->Branch("cosTheta_L", &costheta1, "cosTheta_L/D");
@@ -1522,17 +1522,17 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
             std::cout << imc << "/" << smcnum << std::endl;
         }
 
-        if (!kine_limits(mppi))
+        if (!kine_limits(mpk))
             continue;
         if (!kine_limitsZ(mjpsip))
             continue;
-        if (!kine_limitsX(mjpsipi))
+        if (!kine_limitsX(mjpsik))
             continue;
         //    Jpsihh_dlz *xdlz = new Jpsihh_dlz();
 
         Jpsihh_dlz &p = *(*PDLZ)[i + _Nda];
 
-        //    filldlz(p, mppi, costheta, costheta1, costheta2, phi1, phi2, phi);
+        //    filldlz(p, mpk, costheta, costheta1, costheta2, phi1, phi2, phi);
         float val;
         if (smear) {
             //      if (mjpsip > 4.2 && mjpsip < 4.6)
@@ -1563,7 +1563,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
         wl[0] = GetAmp2sForInt(p, -1, 1) * sweight;
         if (mjpsip > 4.2 && mjpsip < 4.6) {
             if (smear) {
-                if (mppi > 1.9 && mjpsip > 4.43 && mjpsip < 4.47) {
+                if (mpk > 1.9 && mjpsip > 4.43 && mjpsip < 4.47) {
                     wz[0] = GetAmp2sForInt_SMR(p, -1, 2, NULL, false, true) * sweight;
                 } else
                     wz[0] = GetAmp2sForInt_SMR(p, -1, 2) * sweight;
@@ -1579,7 +1579,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
             if (!(TString((_resListZ->At(ii))->GetName())).Contains("SC"))
                 if (mjpsip > 4.2 && mjpsip < 4.6) {
                     if (smear) {
-                        if (mppi > 1.9 && mjpsip > 4.43 && mjpsip < 4.47)
+                        if (mpk > 1.9 && mjpsip > 4.43 && mjpsip < 4.47)
                             wz[ii + 1] =
                                 GetAmp2sForInt_SMR(p, ii + NR, 0, NULL, false, true) * sweight;
                         else
@@ -1596,7 +1596,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
         for (int ii = 0; ii < 6; ++ii)
             if (mjpsip > 4.2 && mjpsip < 4.6) {
                 if (smear) {
-                    if (mppi > 1.9 && mjpsip > 4.43 && mjpsip < 4.47)
+                    if (mpk > 1.9 && mjpsip > 4.43 && mjpsip < 4.47)
                         wZwv[ii] = GetAmp2sForInt_SMR(p, nZwv[ii], 5, NULL, false, true) * sweight;
                     else
                         wZwv[ii] = GetAmp2sForInt_SMR(p, nZwv[ii], 5) * sweight;
@@ -1633,9 +1633,9 @@ void RooDalitzAmplitude::genToyNoACC(const char *name) const {
     /*  TFile *file = new TFile(TString::Format("toynoacc%s.root",name).Data(),"recreate");
     TTree *tree = new TTree("tree","toy");
     float costheta, costheta1,costheta2,phi1,phi2,phi;
-    float mppi,sw,w;
+    float mpk,sw,w;
     float mjpsip;
-    tree->Branch("mppi", &mppi, "mppi/D");
+    tree->Branch("mpk", &mpk, "mpk/D");
   //  tree->Branch("mjpsip", &mjpsip, "mjpsip/D");
     tree->Branch("costheta", &costheta, "costheta/D");
     tree->Branch("costheta1", &costheta1, "costheta1/D");
@@ -1648,24 +1648,24 @@ void RooDalitzAmplitude::genToyNoACC(const char *name) const {
 
 
     float vrnd[6];
-    float mmin = m_pi+m_p;
+    float mmin = m_k+m_p;
     float mmax = m_lb-m_jpsi;
 
     for(int i=0; i<1e6; ++i) {
       if(i%100000==0) std::cout <<"Generate .... " << i << std::endl;
       RooRandom::uniform(6, vrnd);
-      //   if(!kine_limits(mppi)) return 0.0;
+      //   if(!kine_limits(mpk)) return 0.0;
       costheta = (1.+1.)*vrnd[0]-1.;
       costheta1 = (1.+1.)*vrnd[1]-1.;
       costheta2 = (1.+1.)*vrnd[2]-1.;
       phi1 = ((1.+1.)*vrnd[3]-1.)*TMath::Pi();
       phi2 = ((1.+1.)*vrnd[4]-1.)*TMath::Pi();
   //    phi =  ((1.+1.)*vrnd[5]-1.)*TMath::Pi();
-      mppi = (mmax-mmin)*vrnd[5]+mmin;
+      mpk = (mmax-mmin)*vrnd[5]+mmin;
       Jpsihh_dlz *xdlz = new Jpsihh_dlz();
 
-      filldlz(*xdlz, mppi, costheta, costheta1, costheta2, phi1, phi2);
-      w =  GetAmp2s(*xdlz)*getp(m_lb, m_jpsi, mppi)*getp(mppi, m_p, m_pi);
+      filldlz(*xdlz, mpk, costheta, costheta1, costheta2, phi1, phi2);
+      w =  GetAmp2s(*xdlz)*getp(m_lb, m_jpsi, mpk)*getp(mpk, m_p, m_k);
       tree->Fill();
       delete xdlz;
     }
@@ -1730,7 +1730,7 @@ void RooDalitzAmplitude::MakeSpline(RooArgList ires) const {
         im[i] = ((RooAbsReal &)ires[noffset + (i) * 3 + 1]).getVal();
         // if(i==0) std::cout << "Spline x0 " << x[i] << std::endl;
     }
-    double xmin(m_pi + m_p - 0.002), xmax(m_lb - m_jpsi + 0.002);
+    double xmin(m_k + m_p - 0.002), xmax(m_lb - m_jpsi + 0.002);
     _sa3 = TSpline3("_sa3", x, re, nsp, "", xmin, xmax);
     _sp3 = TSpline3("_sp3", x, im, nsp, "", xmin, xmax);
 }
@@ -1746,7 +1746,7 @@ void RooDalitzAmplitude::MakeSplineZ(RooArgList ires) const {
         im[i] = ((RooAbsReal &)ires[noffset + (i) * 3 + 1]).getVal();
         //    if(i==0) std::cout << "Spline x0 " << x[i] << std::endl;
     }
-    double xmin(m_jpsi + m_p - 0.002), xmax(4.6); // xmax(m_lb-m_pi+0.002);
+    double xmin(m_jpsi + m_p - 0.002), xmax(4.6); // xmax(m_lb-m_k+0.002);
     _sa3 = TSpline3("_sa3", x, re, nsp, "", xmin, xmax);
     _sp3 = TSpline3("_sp3", x, im, nsp, "", xmin, xmax);
 }
@@ -1770,7 +1770,7 @@ void RooDalitzAmplitude::ModelIndependentWave3(float *fPoly,
     if (fNp <= 0)
         return;
 
-    float fXmin = m_p + m_pi - 0.002; // 1.513;//1.43;//((RooAbsReal&)res24[3]).getVal();
+    float fXmin = m_p + m_k - 0.002; // 1.513;//1.43;//((RooAbsReal&)res24[3]).getVal();
     float fXmax =
         m_lb - m_jpsi + 0.002; // 2.185;//4.416;//5.03;//2.53;//((RooAbsReal&)res24[4]).getVal();
 
@@ -1832,7 +1832,7 @@ void RooDalitzAmplitude::ModelIndependentWave(float *fPoly, float x, float &Rea,
 
     float fXmin = m_jpsi + m_p - 0.002; // 1.513;//1.43;//((RooAbsReal&)res24[3]).getVal();
     float fXmax =
-        4.6; // m_lb-m_pi+0.002;//2.185;//4.416;//5.03;//2.53;//((RooAbsReal&)res24[4]).getVal();
+        4.6; // m_lb-m_k+0.002;//2.185;//4.416;//5.03;//2.53;//((RooAbsReal&)res24[4]).getVal();
 
     if (x < fXmin)
         return;
@@ -1886,8 +1886,8 @@ Double_t RooDalitzAmplitude::IntegralMethod2(bool storePerEventAmp2) const {
     float wmz_data_inte = 0; // wmzwmz test
 #ifdef CPU
     for (int i = 0; i < iEnd; i++) {
-        // mppi>2GeV
-        // if(mppi<2.0) continue;
+        // mpk>2GeV
+        // if(mpk<2.0) continue;
         Jpsihh_dlz &p = *(*PDLZ)[i];
         double sweight = (double)p.w;
         float mjpsip = p.mjpsip;
@@ -1901,15 +1901,15 @@ Double_t RooDalitzAmplitude::IntegralMethod2(bool storePerEventAmp2) const {
                 val = GetAmp2sSMR(p, NULL, false, true);
             }
             //                        std::cout << "wmz debug GetAmp2sSMR CPU [" << mjpsip << "," <<
-            //                        p.mppi << "]  " << val << std::endl;
+            //                        p.mpk << "]  " << val << std::endl;
         } else {
             val = GetAmp2s(p);
             //                        std::cout << "wmz debug GetAmp2s CPU [" << mjpsip << "," <<
-            //                        p.mppi << "]  " << val << std::endl;
+            //                        p.mpk << "]  " << val << std::endl;
         }
         // float val =  GetAmp2s(p);
         _fx[i] = val;
-        //    std::cout << "mppi, pdf " << p.mppi << " " << val << std::endl;
+        //    std::cout << "mpk, pdf " << p.mpk << " " << val << std::endl;
         if (i >= _Nda)
             inte += val * sweight;
         else
@@ -1958,8 +1958,8 @@ Double_t RooDalitzAmplitude::IntegralMethod2(bool storePerEventAmp2) const {
 #if 0
   for (int i = 0; i < _Nda; i++)
   {
-    //mppi>2GeV
-    //if(mppi<2.0) continue;
+    //mpk>2GeV
+    //if(mpk<2.0) continue;
     _fx[i] = h_fx[i];
 //    wmz_data_inte += _fx[i]; //wmzwmz test
 //                std::cout << "wmz debug _fx["<<i<<"] = " << _fx[i] << "; wmz_data_inte = " << wmz_data_inte << std::endl;
@@ -2002,8 +2002,8 @@ Double_t RooDalitzAmplitude::IntegralMethod1() const {
     //  smcnum = 100;
     std::vector<Amp_dlz> vAmp; //[NR][2][2][2][6]
     for (int i = 0; i < smcnum; i++) {
-        // mppi>2GeV
-        // if(mppi<2.0) continue;
+        // mpk>2GeV
+        // if(mpk<2.0) continue;
 
         Jpsihh_dlz &p = *(*PDLZ)[i + _Nda];
         double sweight = (double)p.w;
@@ -2079,7 +2079,7 @@ Double_t RooDalitzAmplitude::IntegralMethod1() const {
     for (int imc = 0; imc < smcnum; imc++) {
         Amp_dlz p = vAmp[imc];
         double sweight = (double)p.w;
-        // if(mppi<2.0) continue;
+        // if(mpk<2.0) continue;
 
         for (int i = 0; i < 2; ++i) {
             for (int j = 0; j < 2; ++j) {
@@ -2124,8 +2124,8 @@ Double_t RooDalitzAmplitude::IntegralMethod1() const {
     for (int imc = 0; imc < smcnum; imc++) {
         Amp_dlz p = vAmp[imc];
         double sweight = (double)p.w;
-        // mppi>2GeV
-        // if(mppi<2.0) continue;
+        // mpk>2GeV
+        // if(mpk<2.0) continue;
 
         for (int i = 0; i < 2; ++i) {
             for (int j = 0; j < 2; ++j) {
@@ -2168,8 +2168,8 @@ Double_t RooDalitzAmplitude::IntegralMethod1() const {
     for (int imc = 0; imc < smcnum; imc++) {
         Amp_dlz p = vAmp[imc];
         double sweight = (double)p.w;
-        // mppi>2GeV
-        // if(mppi<2.0) continue;
+        // mpk>2GeV
+        // if(mpk<2.0) continue;
 
         for (int i = 0; i < 2; ++i) {
             for (int j = 0; j < 2; ++j) {
@@ -2231,7 +2231,7 @@ Double_t RooDalitzAmplitude::analyticalIntegral(Int_t code, const char *rangeNam
     //  return 1.0;
 
     //  float costheta, costheta1,costheta2,phi1,phi2,phi;
-    // float mppi,sw;
+    // float mpk,sw;
     // std::cout << "zhanglm Integral " << std::endl;
     // if parameters are updated, recache it.
     Double_t Inte = 1.00;
@@ -3250,7 +3250,7 @@ Double_t RooDalitzAmplitude::GetAmp2sSMR(Jpsihh_dlz &dlz,
     //  float hel0, hel3;
     //  int delhelmu;
     float S;
-    float mppi(dlz.mppi);
+    float mpk(dlz.mpk);
     int S2, LR;
     int type;
     int iS2, iLR;
@@ -3277,33 +3277,33 @@ Double_t RooDalitzAmplitude::GetAmp2sSMR(Jpsihh_dlz &dlz,
         //(-1)*(-1)^LR = P_Ln
         switch (type) {
         case BREITWIGNER: {
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i);
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i);
             break;
         }
         case FLATTE: {
             // need to update
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i, 1. / (1. + 0.37));
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i, 1. / (1. + 0.37));
             break;
         }
-            // Bterm = BTerm(S, mppi, m0);
+            // Bterm = BTerm(S, mpk, m0);
         case REVISEDKMATRIX: {
-            Revised_KMAMP(mppi, ir, 0, NR, re_i, im_i, 0);
+            Revised_KMAMP(mpk, ir, 0, NR, re_i, im_i, 0);
             break;
         }
         case MODELINDEPENDENT: { // for mhh only
-            ModelIndependentWave3(&_paraSpline[splcount], mppi, re_i, im_i);
+            ModelIndependentWave3(&_paraSpline[splcount], mpk, re_i, im_i);
             // a bug here
-            //         spline((double)mppi,re_i,im_i);
+            //         spline((double)mpk,re_i,im_i);
 
             m0 = -0.5; // 4.1163770;
             splcount += 9 * NUMSP;
             break;
         }
         }
-        Bterm = BTerm(S, mppi, m0);
+        Bterm = BTerm(S, mpk, m0);
 
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
-        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mppi << " " << RM.Rho2() <<
+        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mpk << " " << RM.Rho2() <<
         //    std::endl;
         for (int i = 0; i <= 1; ++i) { // delmu
             //      delhelmu = (i==0) ? -1: 1;
@@ -3408,7 +3408,7 @@ Double_t RooDalitzAmplitude::GetAmp2sSMR(Jpsihh_dlz &dlz,
     // Zcs part
     int irX(0);
     //  float help;
-    float mjpsipi(dlz.mjpsipi);
+    float mjpsik(dlz.mjpsik);
 
     while (irX < NX) {
         S2 = (int)(_paraList[ir * nset + 2]);
@@ -3421,8 +3421,8 @@ Double_t RooDalitzAmplitude::GetAmp2sSMR(Jpsihh_dlz &dlz,
 
         type = (int)(_paraList[ir * nset + 4]); // Only consider BW at this moment
                                                 // Mass-dependent term
-        BW_AMPX(m0, g0, mjpsipi, LR, re_i, im_i);
-        Bterm = BTermX(S, mjpsipi, m0);
+        BW_AMPX(m0, g0, mjpsik, LR, re_i, im_i);
+        Bterm = BTermX(S, mjpsik, m0);
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
 
         // Angular-dependent term
@@ -3669,7 +3669,7 @@ RooDalitzAmplitude::GetAmp2sSMR_badbinning(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool 
     //  float hel0, hel3;
     //  int delhelmu;
     float S;
-    float mppi(dlz.mppi);
+    float mpk(dlz.mpk);
     int S2, LR;
     int type;
     int iS2, iLR;
@@ -3696,33 +3696,33 @@ RooDalitzAmplitude::GetAmp2sSMR_badbinning(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool 
         //(-1)*(-1)^LR = P_Ln
         switch (type) {
         case BREITWIGNER: {
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i);
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i);
             break;
         }
         case FLATTE: {
             // need to update
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i, 1. / (1. + 0.37));
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i, 1. / (1. + 0.37));
             break;
         }
-            // Bterm = BTerm(S, mppi, m0);
+            // Bterm = BTerm(S, mpk, m0);
         case REVISEDKMATRIX: {
-            Revised_KMAMP(mppi, ir, 0, NR, re_i, im_i, 0);
+            Revised_KMAMP(mpk, ir, 0, NR, re_i, im_i, 0);
             break;
         }
         case MODELINDEPENDENT: { // for mhh only
-            ModelIndependentWave3(&_paraSpline[splcount], mppi, re_i, im_i);
+            ModelIndependentWave3(&_paraSpline[splcount], mpk, re_i, im_i);
             // a bug here
-            //         spline((double)mppi,re_i,im_i);
+            //         spline((double)mpk,re_i,im_i);
 
             m0 = -0.5; // 4.1163770;
             splcount += 9 * NUMSP;
             break;
         }
         }
-        Bterm = BTerm(S, mppi, m0);
+        Bterm = BTerm(S, mpk, m0);
 
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
-        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mppi << " " << RM.Rho2() <<
+        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mpk << " " << RM.Rho2() <<
         //    std::endl;
         for (int i = 0; i <= 1; ++i) { // delmu
             //      delhelmu = (i==0) ? -1: 1;
@@ -3827,7 +3827,7 @@ RooDalitzAmplitude::GetAmp2sSMR_badbinning(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool 
     // Zcs part
     int irX(0);
     //  float help;
-    float mjpsipi(dlz.mjpsipi);
+    float mjpsik(dlz.mjpsik);
 
     while (irX < NX) {
         S2 = (int)(_paraList[ir * nset + 2]);
@@ -3840,8 +3840,8 @@ RooDalitzAmplitude::GetAmp2sSMR_badbinning(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool 
 
         type = (int)(_paraList[ir * nset + 4]); // Only consider BW at this moment
                                                 // Mass-dependent term
-        BW_AMPX(m0, g0, mjpsipi, LR, re_i, im_i);
-        Bterm = BTermX(S, mjpsipi, m0);
+        BW_AMPX(m0, g0, mjpsik, LR, re_i, im_i);
+        Bterm = BTermX(S, mjpsik, m0);
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
 
         // Angular-dependent term
@@ -4055,7 +4055,7 @@ Double_t RooDalitzAmplitude::GetAmp2s(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool metho
     //  float hel0, hel3;
     //  int delhelmu;
     float S;
-    float mppi(dlz.mppi);
+    float mpk(dlz.mpk);
     int S2, LR;
     int type;
     TComplex RM;
@@ -4078,32 +4078,32 @@ Double_t RooDalitzAmplitude::GetAmp2s(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool metho
         //(-1)*(-1)^LR = P_Ln
         switch (type) {
         case BREITWIGNER: {
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i);
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i);
             break;
         }
         case FLATTE: {
             // need to update
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i, 1. / (1. + 0.37));
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i, 1. / (1. + 0.37));
             break;
         }
-            // Bterm = BTerm(S, mppi, m0);
+            // Bterm = BTerm(S, mpk, m0);
         case REVISEDKMATRIX: {
-            Revised_KMAMP(mppi, ir, 0, NR, re_i, im_i, 0);
+            Revised_KMAMP(mpk, ir, 0, NR, re_i, im_i, 0);
             break;
         }
         case MODELINDEPENDENT: { // for mhh only
-            ModelIndependentWave3(&_paraSpline[splcount], mppi, re_i, im_i);
+            ModelIndependentWave3(&_paraSpline[splcount], mpk, re_i, im_i);
             // bug
-            //         spline((double)mppi,re_i,im_i);
+            //         spline((double)mpk,re_i,im_i);
             m0 = -0.5; // 4.1163770;
             splcount += 9 * NUMSP;
             break;
         }
         }
-        Bterm = BTerm(S, mppi, m0);
+        Bterm = BTerm(S, mpk, m0);
 
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
-        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mppi << " " << RM.Rho2() <<
+        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mpk << " " << RM.Rho2() <<
         //    std::endl;
         for (int i = 0; i <= 1; ++i) { // delmu
             //      delhelmu = (i==0) ? -1: 1;
@@ -4252,7 +4252,7 @@ Double_t RooDalitzAmplitude::GetAmp2s(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool metho
     // Zcs part
     int irX(0);
     //  float help;
-    float mjpsipi(dlz.mjpsipi);
+    float mjpsik(dlz.mjpsik);
 
     while (irX < NX) {
         S2 = (int)(_paraList[ir * nset + 2]);
@@ -4265,8 +4265,8 @@ Double_t RooDalitzAmplitude::GetAmp2s(Jpsihh_dlz &dlz, Amp_dlz *tnew, bool metho
 
         type = (int)(_paraList[ir * nset + 4]); // Only consider BW at this moment
                                                 // Mass-dependent term
-        BW_AMPX(m0, g0, mjpsipi, LR, re_i, im_i);
-        Bterm = BTermX(S, mjpsipi, m0);
+        BW_AMPX(m0, g0, mjpsik, LR, re_i, im_i);
+        Bterm = BTermX(S, mjpsik, m0);
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
         // Angular-dependent term
         for (int i = 0; i <= 1; ++i) { // delmu
@@ -4354,7 +4354,7 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt_SMR(
     //  float hel0, hel3;
     //  int delhelmu;
     float S;
-    float mppi(dlz.mppi);
+    float mpk(dlz.mpk);
     int S2, LR;
     int type;
     int iS2, iLR;
@@ -4400,32 +4400,32 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt_SMR(
         case BREITWIGNER:
 
         {
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i);
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i);
             break;
         }
         case FLATTE: {
             // need to update
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i, 1. / (1. + 0.37));
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i, 1. / (1. + 0.37));
             break;
         }
         case REVISEDKMATRIX: {
-            Revised_KMAMP(mppi, ir, 0, NR, re_i, im_i, 0);
+            Revised_KMAMP(mpk, ir, 0, NR, re_i, im_i, 0);
             break;
         }
         case MODELINDEPENDENT: { // for mhh only
-            ModelIndependentWave3(&_paraSpline[splcount], mppi, re_i, im_i);
+            ModelIndependentWave3(&_paraSpline[splcount], mpk, re_i, im_i);
             // a bug here
-            //        spline((double)mppi,re_i,im_i);
+            //        spline((double)mpk,re_i,im_i);
 
             m0 = -0.5; // 4.1163770;
             splcount += 9 * NUMSP;
             break;
         }
         }
-        Bterm = BTerm(S, mppi, m0);
+        Bterm = BTerm(S, mpk, m0);
 
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
-        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mppi << " " << RM.Rho2() <<
+        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mpk << " " << RM.Rho2() <<
         //    std::endl;
         for (int i = 0; i <= 1; ++i) { // delmu
             //      delhelmu = (i==0) ? -1: 1;
@@ -4547,7 +4547,7 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt_SMR(
     // Zcs part
     int irX(0);
     //  float help;
-    float mjpsipi(dlz.mjpsipi);
+    float mjpsik(dlz.mjpsik);
 
     //  std::cout << "wmz debug start Zcs" << std::endl;
     while (irX < NX) {
@@ -4566,8 +4566,8 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt_SMR(
 
         type = (int)(_paraList[ir * nset + TYPE]); // Only consider BW at this moment
                                                    // Mass-dependent term
-        BW_AMPX(m0, g0, mjpsipi, LR, re_i, im_i);
-        Bterm = BTermX(S, mjpsipi, m0);
+        BW_AMPX(m0, g0, mjpsik, LR, re_i, im_i);
+        Bterm = BTermX(S, mjpsik, m0);
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
 
         // Angular-dependent term
@@ -4928,7 +4928,7 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt(Jpsihh_dlz &dlz, int index, int grou
     float hel3, hel0;
     int delhelmu;
     float S, hel1, hel2;
-    float mppi(dlz.mppi);
+    float mpk(dlz.mpk);
     int S2, LR;
     TComplex RM;
     TComplex ampCoff, AIndep;
@@ -4983,33 +4983,33 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt(Jpsihh_dlz &dlz, int index, int grou
         // float paritypart;
         switch (type) {
         case BREITWIGNER: {
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i);
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i);
             break;
         }
         case FLATTE: {
             // need to update
-            BW_AMP(m0, g0, mppi, LR, re_i, im_i, 1. / (1. + 0.37));
+            BW_AMP(m0, g0, mpk, LR, re_i, im_i, 1. / (1. + 0.37));
             break;
         }
-            // Bterm = BTerm(S, mppi, m0);
+            // Bterm = BTerm(S, mpk, m0);
         case REVISEDKMATRIX: {
-            Revised_KMAMP(mppi, ir, 0, NR, re_i, im_i, 0);
+            Revised_KMAMP(mpk, ir, 0, NR, re_i, im_i, 0);
             break;
         }
         case MODELINDEPENDENT: { // for mhh only
-            ModelIndependentWave3(&_paraSpline[splcount], mppi, re_i, im_i);
-            //        spline((double)mppi,re_i,im_i);
+            ModelIndependentWave3(&_paraSpline[splcount], mpk, re_i, im_i);
+            //        spline((double)mpk,re_i,im_i);
             m0 = -0.5; // 4.1163770;
             splcount += 9 * NUMSP;
             break;
         }
         }
-        Bterm = BTerm(S, mppi, m0);
+        Bterm = BTerm(S, mpk, m0);
 
-        //    Bterm = BTerm(S, mppi, m0);
+        //    Bterm = BTerm(S, mpk, m0);
         //      dlz.defed[ir] = true;
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
-        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mppi << " " << RM.Rho2() <<
+        //    if(type==MODELINDEPENDENT) std::cout << "ZLM " << mpk << " " << RM.Rho2() <<
         //    std::endl;
         for (int i = 0; i <= 1; ++i) { // delmu
             delhelmu = (i == 0) ? -1 : 1;
@@ -5171,7 +5171,7 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt(Jpsihh_dlz &dlz, int index, int grou
     // Zcs part
     int irX(0);
     //  float help, helZ;
-    float mjpsipi(dlz.mjpsipi);
+    float mjpsik(dlz.mjpsik);
     TIterator *coefIterX = _resListX->MakeIterator();
     while (RooArgList *Ires = (RooArgList *)coefIterX->Next()) {
         RooArgList ires = (*Ires);
@@ -5193,8 +5193,8 @@ Double_t RooDalitzAmplitude::GetAmp2sForInt(Jpsihh_dlz &dlz, int index, int grou
         LR = TMath::Max(abs((int)(S - 1)), 0);
         if ((pow(-1, LR) * parity) < 0)
             LR += 1;
-        BW_AMPX(m0, g0, mjpsipi, LR, re_i, im_i);
-        Bterm = BTermX(S, mjpsipi, m0);
+        BW_AMPX(m0, g0, mjpsik, LR, re_i, im_i);
+        Bterm = BTermX(S, mjpsik, m0);
         RM = TComplex((double)re_i, (double)im_i) * (double)Bterm;
         for (int i = 0; i <= 1; ++i) { // delmu
             //        delhelmu = (i==0) ? -1: 1;
@@ -5456,12 +5456,12 @@ void RooDalitzAmplitude::getInt(double *vint, bool small, float ylo, float yhi) 
         }
         if (small && i % 10 != 0)
             continue; // for small only use 10% MC for calculation
-        // mppi>2GeV
-        // if(mppi<2.0) continue;
+        // mpk>2GeV
+        // if(mpk<2.0) continue;
         Jpsihh_dlz &p = *(*PDLZ)[i];
-        if (p.mppi < ylo || p.mppi > yhi)
+        if (p.mpk < ylo || p.mpk > yhi)
             continue;
-        //    filldlz(p, mppi, costheta, costheta1, costheta2, phi1, phi2, phi);
+        //    filldlz(p, mpk, costheta, costheta1, costheta2, phi1, phi2, phi);
         val = GetAmp2s(p);
         sweight = (double)p.w;
         a0[0] += val * sweight;
@@ -5917,7 +5917,7 @@ Float_t RooDalitzAmplitude::BTerm(Float_t Spin, Float_t mpp, Float_t mr) const {
     float pB0 = pB;
     // for NR
     if (mr < -0.) {
-        float mmin = m_pi + m_p;
+        float mmin = m_k + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff = (mmin + mmax) / 2.;
         pB0 = getp(m_lb, m_jpsi, mreff);
@@ -5925,7 +5925,7 @@ Float_t RooDalitzAmplitude::BTerm(Float_t Spin, Float_t mpp, Float_t mr) const {
     if (mr > 1e-10 && mr + m_jpsi < m_lb)
         pB0 = getp(m_lb, m_jpsi, mr);
     if (mr + m_jpsi > m_lb) {
-        float mmin = m_pi + m_p;
+        float mmin = m_k + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff =
             mmin + 0.5 * (mmax - mmin) * (1.0 + tanh((mr - (mmin + mmax) / 2.) / (mmax - mmin)));
@@ -5950,16 +5950,16 @@ Float_t RooDalitzAmplitude::BTermZ(Float_t Spin, Float_t mpp, Float_t mr) const 
     if (LB < 0)
         LB = 0;
 
-    float pB = getp(m_lb, m_pi, mpp);
+    float pB = getp(m_lb, m_k, mpp);
     float pB0 = pB;
     if (mr < -0.) {
         float mmin = m_jpsi + m_p;
-        float mmax = m_lb - m_pi;
+        float mmax = m_lb - m_k;
         float mreff = (mmin + mmax) / 2.;
-        pB0 = getp(m_lb, m_pi, mreff);
+        pB0 = getp(m_lb, m_k, mreff);
     }
-    if (mr > 1e-10 && mr + m_pi < m_lb)
-        pB0 = getp(m_lb, m_pi, mr);
+    if (mr > 1e-10 && mr + m_k < m_lb)
+        pB0 = getp(m_lb, m_k, mr);
 
     c = (LINESHAPE_LBPLUSONE) ? F_BW(_FFB, LB + 1, pB, pB0) * pow(pB / m_lb, LB) * (pB / pB0)
                               : F_BW(_FFB, LB, pB, pB0) * pow(pB / m_lb, LB);
@@ -6179,7 +6179,7 @@ cnum RooDalitzAmplitude::get_b(cnum alpha, cnum p23) const {
     cnum unit2(2, 0);
     cnum unit4(4, 0);
     cnum p12(m_lb, 0);
-    cnum p13(m_pi, 0);
+    cnum p13(m_k, 0);
 
     cnum m2(m_chic1, 0);
     cnum m3(m_p, 0);
@@ -6200,7 +6200,7 @@ cnum RooDalitzAmplitude::get_c(cnum alpha, cnum p23, float m_r, float gamma) con
     cnum unit2(2, 0);
     cnum unit4(4, 0);
     cnum p12(m_lb, 0);
-    cnum p13(m_pi, 0);
+    cnum p13(m_k, 0);
 
     cnum m1(m_r, -1 * gamma / 2.);
     cnum m2(m_chic1, 0);
@@ -6216,7 +6216,7 @@ cnum RooDalitzAmplitude::this_func(float alpha1, float p23_real, float m_r, floa
     cnum unit2(2, 0);
     cnum unit4(4, 0);
     cnum p12(m_lb, 0);
-    cnum p13(m_pi, 0);
+    cnum p13(m_k, 0);
 
     cnum m2(m_chic1, 0);
     cnum m3(m_p, 0);
@@ -6295,7 +6295,7 @@ bool RooDalitzAmplitude::BW_AMP(
     //  LB = 1; //changed by LM
     //}
     // float pB = getpB(mpp);
-    float pR = getp(mpp, m_p, m_pi);
+    float pR = getp(mpp, m_p, m_k);
     // For NR
     float pR0 = pR;
     if (m_r < -0.) // NR
@@ -6303,20 +6303,20 @@ bool RooDalitzAmplitude::BW_AMP(
         //  ampl_r = pow(pR,LR);
         //  ampl_i = 0;
         //  return true;
-        float mmin = m_pi + m_p;
+        float mmin = m_k + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff = (mmin + mmax) / 2.;
-        pR0 = getp(mreff, m_p, m_pi);
+        pR0 = getp(mreff, m_p, m_k);
     }
-    if (m_r > m_p + m_pi) {
-        pR0 = getp(m_r, m_p, m_pi); // sqrt(m_r*m_r-4*m2_pi)/2.;
+    if (m_r > m_p + m_k) {
+        pR0 = getp(m_r, m_p, m_k); // sqrt(m_r*m_r-4*m2_pi)/2.;
     }
-    if (m_r <= m_p + m_pi && m_r > 1e-10) {
-        float mmin = m_pi + m_p;
+    if (m_r <= m_p + m_k && m_r > 1e-10) {
+        float mmin = m_k + m_p;
         float mmax = m_lb - m_jpsi;
         float mreff =
             mmin + 0.5 * (mmax - mmin) * (1.0 + tanh((m_r - (mmin + mmax) / 2.) / (mmax - mmin)));
-        pR0 = getp(mreff, m_p, m_pi);
+        pR0 = getp(mreff, m_p, m_k);
     }
     // float FB = F_BW(_FFB,LB,pB,pB0);
     float FR = F_BW(_FFR, LR, pR, pR0);
@@ -6329,7 +6329,7 @@ bool RooDalitzAmplitude::BW_AMP(
     float bw_r(0), bw_i(0);
     float gamma = gamma_r;
     // if(with_dep!=0) gamma = gamma_r*pow((pR/pR0),2*LR+1)*(m_r/mpp)*FR*FR;
-    if (m_r > m_p + m_pi) {
+    if (m_r > m_p + m_k) {
         gamma = gamma_r * pow((pR / pR0), 2 * LR + 1) * (m_r / mpp) * FR * FR;
     } else if (m_r < 1.43 && m_r > 0) {
         float msig = 1.18937;    // 1.192642;
@@ -6375,12 +6375,12 @@ bool RooDalitzAmplitude::BW_AMP(
     //  LB = 1; //changed by LM
     //}
     // float pB = getpB(mpp);
-    float pR = getp(mpp, m_p, m_pi);
+    float pR = getp(mpp, m_p, m_k);
     // For NR
 
     float pR0 = pR;
-    if (m_r > m_p + m_pi)
-        pR0 = getp(m_r, m_p, m_pi); // sqrt(m_r*m_r-4*m2_pi)/2.;
+    if (m_r > m_p + m_k)
+        pR0 = getp(m_r, m_p, m_k); // sqrt(m_r*m_r-4*m2_pi)/2.;
 
     // float FB = F_BW(_FFB,LB,pB,pB0);
     // take FR = 1.0;
@@ -6474,8 +6474,8 @@ bool RooDalitzAmplitude::BW_AMPZSMR(float m_r,
     float aa;
     //  float ph;
     float min = m_jpsi + m_p;
-    float max = m_lb - m_pi;
-    //  float min(2.*m_pi), max(m_bs-m_jpsi);
+    float max = m_lb - m_k;
+    //  float min(2.*m_k), max(m_bs-m_jpsi);
     float mbin = (max - min) / NN;
 
     float bw_i, bw_r;
@@ -6520,10 +6520,10 @@ bool RooDalitzAmplitude::BW_AMPX(
     ampl_r = 0;
     ampl_i = 0;
     float m2pp = mpp * mpp;
-    float pR = getp(mpp, m_pi, m_jpsi);
+    float pR = getp(mpp, m_k, m_jpsi);
     float pR0 = pR;
-    if (m_r > m_pi + m_jpsi)
-        pR0 = getp(m_r, m_pi, m_jpsi); // sqrt(m_r*m_r-4*m2_pi)/2.;
+    if (m_r > m_k + m_jpsi)
+        pR0 = getp(m_r, m_k, m_jpsi); // sqrt(m_r*m_r-4*m2_pi)/2.;
 
     // float FB = F_BW(_FFB,LB,pB,pB0);
     float FR = F_BW(_FFR, LR, pR, pR0);
@@ -6531,7 +6531,7 @@ bool RooDalitzAmplitude::BW_AMPX(
     float bw_r(0), bw_i(0);
     float gamma = gamma_r;
     // if(with_dep!=0) gamma = gamma_r*pow((pR/pR0),2*LR+1)*(m_r/mpp)*FR*FR;
-    if (m_r > m_pi + m_jpsi)
+    if (m_r > m_k + m_jpsi)
         gamma = gamma_r * pow((pR / pR0), 2 * LR + 1) * (m_r / mpp) * FR * FR;
     breit_wigner(m_r, gamma, m2pp, bw_r, bw_i);
     // charged mpp->mr
@@ -6880,18 +6880,18 @@ bool RooDalitzAmplitude::Revised_KMAMP(
     //  switch(iType) {
     //  case 0: //k*
     m1 = m_p;
-    m2 = m_pi;
+    m2 = m_k;
     m3 = m_jpsi;
     m1_0 = m_p;
-    m2_0 = m_pi;
+    m2_0 = m_k;
     m3_0 = m_jpsi;
     if (isPcChain) {
         m1 = m_jpsi;
         m2 = m_p;
-        m3 = m_pi;
+        m3 = m_k;
         m1_0 = m_jpsi;
         m2_0 = m_p;
-        m3_0 = m_pi;
+        m3_0 = m_k;
     }
     //    break;
     //  }
@@ -6988,10 +6988,10 @@ float RooDalitzAmplitude::KMatrixTerm(
     //  switch(iType) {
     //  case 0: //L*
     m1 = m_p;
-    m2 = m_pi;
+    m2 = m_k;
     m3 = m_jpsi;
     m1_0 = m_p;
-    m2_0 = m_pi;
+    m2_0 = m_k;
     m3_0 = m_jpsi;
     //    break;
     //
@@ -7074,7 +7074,7 @@ TComplex RooDalitzAmplitude::getFBW2_complexMass(float M2, TComplex m1, TComplex
     //  return pow(p2/p20, L) * F_BW2_complexMass(_FFB, L, p2, p20) ;
 }
 
-// void RooDalitzAmplitude::filldlz(Jpsihh_dlz &dlz, Double_t xmppi, Double_t xcostheta,
+// void RooDalitzAmplitude::filldlz(Jpsihh_dlz &dlz, Double_t xmpk, Double_t xcostheta,
 //                  Double_t xcostheta1, Double_t xcostheta2,
 //                  Double_t xphi1, Double_t xphi2,
 //                  Double_t xcosthetaB, Double_t xcosthetaZ, Double_t xcosthetaPsi,
@@ -7084,7 +7084,7 @@ TComplex RooDalitzAmplitude::getFBW2_complexMass(float M2, TComplex m1, TComplex
 //                  Double_t sw) const
 
 void RooDalitzAmplitude::filldlz(Jpsihh_dlz &dlz,
-                                 Double_t xmppi,
+                                 Double_t xmpk,
                                  Double_t xcostheta,
                                  Double_t xcostheta1,
                                  Double_t xcostheta2,
@@ -7107,11 +7107,11 @@ void RooDalitzAmplitude::filldlz(Jpsihh_dlz &dlz,
                                  Double_t xphiMu_X,
                                  Double_t xcosthetap_X,
                                  Double_t xalphaMu_X,
-                                 Double_t xmjpsipi,
+                                 Double_t xmjpsik,
                                  Double_t sw) const {
-    dlz.mppi = xmppi;
+    dlz.mpk = xmpk;
     dlz.mjpsip = xmjpsip;
-    dlz.mjpsipi = xmjpsipi;
+    dlz.mjpsik = xmjpsik;
     float theta = acos(xcostheta);
     float theta1 = acos(xcostheta1);
     float theta2 = acos(xcostheta2);
