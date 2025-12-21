@@ -31,8 +31,8 @@ namespace Execution{
         // Persist the variables outside the scope of this function
         auto& memory_manager = Memory::get_manager<RooRealVar>();
         std::vector<RooRealVar*> base_observables = {
-            memory_manager.create("mpk","",1.0,2.6),
-            memory_manager.create("mjpsip","",4.,5.5),
+            memory_manager.create("mLk","",1.0,2.6),
+            memory_manager.create("mjpsiL","",4.,5.5),
             memory_manager.create("mjpsik","",3.2,4.7),
             memory_manager.create("cosTheta_L","cosTheta_L",-1,1),
             memory_manager.create("cosTheta_Jpsi","cosTheta_Jpsi",-1,1),
@@ -40,8 +40,8 @@ namespace Execution{
             memory_manager.create("Z_cosTheta_Lb","Z_cosTheta_Lb",-1,1),
             memory_manager.create("Z_cosTheta_Z","Z_cosTheta_Z",-1,1),
             memory_manager.create("Z_cosTheta_Jpsi","Z_cosTheta_Jpsi",-1,1),
-            memory_manager.create("cosTheta_p","cosTheta_p",-1,1),
-            memory_manager.create("phipi","phipi",-TMath::Pi(), TMath::Pi()),
+            memory_manager.create("cosTheta_Lambda","cosTheta_Lambda",-1,1),
+            memory_manager.create("phiK","phiK",-TMath::Pi(), TMath::Pi()),
             memory_manager.create("phiMu","phiMu",-TMath::Pi(), TMath::Pi()),
             memory_manager.create("Z_phiZ","Z_phiZ",-TMath::Pi(), TMath::Pi()),
             memory_manager.create("Z_phiJpsi","Z_phiJpsi",-TMath::Pi(), TMath::Pi()),
@@ -115,7 +115,7 @@ namespace Execution{
         // Create additional variables beyond the base observables
         auto& memory_manager = Memory::get_manager<RooRealVar>();
         RooRealVar * index = memory_manager.create("index","index",0);
-        RooRealVar * nsig_sw = memory_manager.create("nsig_sw","nsig_sw",0);
+        RooRealVar * nsig_sw = memory_manager.create("signal_sw","signal_sw",0);
 
         // Create the observables + weights list
         // Then read the data tree
@@ -131,7 +131,7 @@ namespace Execution{
             "",
             *observables_with_weights,
             RooFit::Import(*data_tree),
-            RooFit::Cut("mpk>1.0778425&&mpk<2.5227&&mjpsip>4.0351721&&mjpsip<5.4800296"),
+            RooFit::Cut("mLk>1.0778425&&mLk<2.5227&&mjpsiL>4.0351721&&mjpsiL<5.4800296"),
             RooFit::WeightVar(*nsig_sw)
         );
         data_file.Close();
@@ -153,7 +153,7 @@ namespace Execution{
             temp_data.get(),
             *observables_with_weights,
             nullptr,
-            "nsig_sw"
+            "signal_sw"
         );
         data_fit->Print("V");
 

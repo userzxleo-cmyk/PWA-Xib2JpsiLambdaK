@@ -306,7 +306,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     if (fortoystudy) {
         sprintf(cname, "tree");
     }
-    sprintf(swname, "sw");
+    sprintf(swname, "signal_sw");
 
     // sw.resize(_Nda, 0);
     sumW_data = 0;
@@ -402,12 +402,12 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     int mcflat(0);
     if (mcdata.Contains("MCFlatAcc")) {
         sprintf(cname, "MyTuple");
-        sprintf(swname, "nsig_sw");
+        sprintf(swname, "signal_sw");
         mcflat = 1;
     }
     if (mcdata.Contains("Toy")) {
         sprintf(cname, "MyTuple");
-        sprintf(swname, "nsig_sw");
+        sprintf(swname, "signal_sw");
     }
 
     TChain *smcdata = new TChain(cname);
@@ -1304,16 +1304,16 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     if (fortoystudy) {
         sprintf(cname, "tree");
     }
-    sprintf(swname, "sw");
+    sprintf(swname, "signal_sw");
     int mcflat(0);
     if (mcdata.Contains("MCFlatAcc")) {
         sprintf(cname, "MyTuple");
-        sprintf(swname, "nsig_sw");
+        sprintf(swname, "signal_sw");
         mcflat = 1;
     }
     if (mcdata.Contains("Toy")) {
         sprintf(cname, "MyTuple");
-        sprintf(swname, "nsig_sw");
+        sprintf(swname, "signal_sw");
     }
 
     TChain *smcdata = new TChain(cname);
@@ -1403,8 +1403,8 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
         tree->Branch("eff", &eff, "eff/D");
     tree->Branch("sw_old", &sw, "sw_old/D");
     tree->Branch("mass", &mass, "mass/D");
-    tree->Branch("mpk", &mpk, "mpk/D");
-    tree->Branch("mjpsip", &mjpsip, "mjpsip/D");
+    tree->Branch("mLk", &mpk, "mLk/D");
+    tree->Branch("mjpsiL", &mjpsip, "mjpsiL/D");
     if (MYXN != 0) {
         tree->Branch("mjpsik", &mjpsik, "mjpsik/D");
         tree->Branch("X_cosTheta_X", &X_cosTheta_X, "X_cosTheta_X/D");
@@ -1415,7 +1415,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
         tree->Branch("sw_old", &sw, "sw_old/D");
         tree->Branch("cosTheta_Lb", &costheta, "cosTheta_Lb/D");
         tree->Branch("cosTheta_Jpsi", &costheta2, "cosTheta_Jpsi/D");
-        tree->Branch("phipi", &phi1, "phipi/D");
+        tree->Branch("phiK", &phi1, "phiK/D");
         tree->Branch("phiMu", &phi2, "phiMu/D");
         tree->Branch("Z_cosTheta_Lb", &costhetaB, "Z_cosTheta_Lb/D");
         tree->Branch("Z_cosTheta_Jpsi", &costhetaPsi, "Z_cosTheta_Jpsi/D");

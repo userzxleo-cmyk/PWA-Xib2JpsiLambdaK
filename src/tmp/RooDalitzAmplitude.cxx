@@ -346,13 +346,13 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
 	if (mcdata.Contains("MCFlatAcc"))
 	{
 		sprintf(cname, "MyTuple");
-		sprintf(swname, "nsig_sw");
+            sprintf(swname, "signal_sw");
 		mcflat = 1;
 	}
 	if (mcdata.Contains("Toy"))
 	{
 		sprintf(cname, "MyTuple");
-		sprintf(swname, "nsig_sw");
+            sprintf(swname, "signal_sw");
 	}
 
 	TChain *smcdata = new TChain(cname);
@@ -801,13 +801,13 @@ void RooDalitzAmplitude::genToy(const TString mcdata, const char *name, bool ver
 	if (mcdata.Contains("MCFlatAcc"))
 	{
 		sprintf(cname, "MyTuple");
-		sprintf(swname, "nsig_sw");
+            sprintf(swname, "signal_sw");
 		mcflat = 1;
 	}
 	if (mcdata.Contains("Toy"))
 	{
 		sprintf(cname, "MyTuple");
-		sprintf(swname, "nsig_sw");
+            sprintf(swname, "signal_sw");
 	}
 
 	TChain *smcdata = new TChain(cname);
