@@ -324,13 +324,13 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         // Jpsihh_dlz xdlz;// = *Ixdlz;
 
         // row->Print("V");
-        mpk = ((RooAbsReal *)row->find("mpk"))->getVal();
+        mpk = ((RooAbsReal *)row->find("mLk"))->getVal();
         // if(!kine_limits(mpk)) { std::cout << "why " << std::endl;}
 
         costheta = ((RooAbsReal *)row->find("cosTheta_Lb"))->getVal();
         costheta1 = ((RooAbsReal *)row->find("cosTheta_L"))->getVal();
         costheta2 = ((RooAbsReal *)row->find("cosTheta_Jpsi"))->getVal();
-        phi1 = ((RooAbsReal *)row->find("phipi"))->getVal();
+        phi1 = ((RooAbsReal *)row->find("phiK"))->getVal();
         phi2 = ((RooAbsReal *)row->find("phiMu"))->getVal();
         costhetaB = ((RooAbsReal *)row->find("Z_cosTheta_Lb"))->getVal();
         costhetaZ = ((RooAbsReal *)row->find("Z_cosTheta_Z"))->getVal();
@@ -338,9 +338,9 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         phiZ = ((RooAbsReal *)row->find("Z_phiZ"))->getVal();
         phiPsi = ((RooAbsReal *)row->find("Z_phiJpsi"))->getVal();
         phiMu = ((RooAbsReal *)row->find("Z_phiMu"))->getVal();
-        costhetap = ((RooAbsReal *)row->find("cosTheta_p"))->getVal();
+        costhetap = ((RooAbsReal *)row->find("cosTheta_Lambda"))->getVal();
         alphaMu = ((RooAbsReal *)row->find("alpha_Mu"))->getVal();
-        mjpsip = ((RooAbsReal *)row->find("mjpsip"))->getVal();
+        mjpsip = ((RooAbsReal *)row->find("mjpsiL"))->getVal();
         if (MYXN != 0) {
             mjpsik = ((RooAbsReal *)row->find("mjpsik"))->getVal();
             X_cosTheta_Lb = ((RooAbsReal *)row->find("X_cosTheta_Lb"))->getVal();
@@ -415,13 +415,13 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
         smcdata->Add(mcdata);
     }
 
-    smcdata->SetBranchAddress("mpk", &mpk);
-    smcdata->SetBranchAddress("mjpsip", &mjpsip);
+    smcdata->SetBranchAddress("mLk", &mpk);
+    smcdata->SetBranchAddress("mjpsiL", &mjpsip);
     smcdata->SetBranchAddress("cosTheta_Lb", &costheta);
     smcdata->SetBranchAddress("cosTheta_L", &costheta1);
     smcdata->SetBranchAddress("cosTheta_Jpsi", &costheta2);
     //
-    smcdata->SetBranchAddress("phipi", &phi1);
+    smcdata->SetBranchAddress("phiK", &phi1);
     smcdata->SetBranchAddress("phiMu", &phi2);
     smcdata->SetBranchAddress("Z_cosTheta_Lb", &costhetaB);
     smcdata->SetBranchAddress("Z_cosTheta_Z", &costhetaZ);
@@ -429,7 +429,7 @@ RooDalitzAmplitude::RooDalitzAmplitude(const char *name,
     smcdata->SetBranchAddress("Z_phiZ", &phiZ);
     smcdata->SetBranchAddress("Z_phiJpsi", &phiPsi);
     smcdata->SetBranchAddress("Z_phiMu", &phiMu);
-    smcdata->SetBranchAddress("cosTheta_p", &costhetap);
+    smcdata->SetBranchAddress("cosTheta_Lambda", &costhetap);
     smcdata->SetBranchAddress("alpha_Mu", &alphaMu);
     if (MYXN != 0) {
         smcdata->SetBranchAddress("mjpsik", &mjpsik);
@@ -1356,12 +1356,12 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     smcdata->SetBranchAddress("mass", &mass);
     if (fortoystudy)
         smcdata->SetBranchAddress("eff", &eff);
-    smcdata->SetBranchAddress("mpk", &mpk);
-    smcdata->SetBranchAddress("mjpsip", &mjpsip);
+    smcdata->SetBranchAddress("mLk", &mpk);
+    smcdata->SetBranchAddress("mjpsiL", &mjpsip);
     smcdata->SetBranchAddress("cosTheta_Lb", &costheta);
     smcdata->SetBranchAddress("cosTheta_L", &costheta1);
     smcdata->SetBranchAddress("cosTheta_Jpsi", &costheta2);
-    smcdata->SetBranchAddress("phipi", &phi1);
+    smcdata->SetBranchAddress("phiK", &phi1);
     smcdata->SetBranchAddress("phiMu", &phi2);
 
     smcdata->SetBranchAddress("Z_cosTheta_Lb", &costhetaB);
@@ -1370,7 +1370,7 @@ void RooDalitzAmplitude::genToy(const TString mcdata,
     smcdata->SetBranchAddress("Z_phiZ", &phiZ);
     smcdata->SetBranchAddress("Z_phiJpsi", &phiPsi);
     smcdata->SetBranchAddress("Z_phiMu", &phiMu);
-    smcdata->SetBranchAddress("cosTheta_p", &costhetap);
+    smcdata->SetBranchAddress("cosTheta_Lambda", &costhetap);
     smcdata->SetBranchAddress("alpha_Mu", &alphaMu);
     smcdata->SetBranchAddress(swname, &sw);
 
