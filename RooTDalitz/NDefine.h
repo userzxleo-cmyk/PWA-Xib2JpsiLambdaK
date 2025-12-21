@@ -3,7 +3,7 @@
 // These need to change depending number of resonances
 // Otherwise, we can template kernel_calEva (not a bad idea given GPU ID thing)
 namespace Constant {
-    static constexpr unsigned number_of_Lz = 20;
+    static constexpr unsigned number_of_Lz = 5;
     static constexpr unsigned number_of_Pc = 12;
     static constexpr unsigned number_of_Zcs = 0;
     static constexpr unsigned number_of_resonances = number_of_Lz + number_of_Pc + number_of_Zcs;
