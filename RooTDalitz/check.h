@@ -11,7 +11,7 @@ namespace Static_Check {
         // Hack to avoid checking defaults during compile-time
         template <bool check = false> void use_default() {
             if constexpr (check)
-                check_count<20, 12, 0>();
+                check_count<5, 12, 0>();
         }
     } // namespace Resonances
 

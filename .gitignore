@@ -3,3 +3,4 @@ Fit_fullPHSP/systematics/*
 Fit_fullPHSP/fitresults/*
 Fit_fullPHSP/func/*
 bin*
+*.log

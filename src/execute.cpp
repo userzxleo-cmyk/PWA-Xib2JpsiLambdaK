@@ -123,7 +123,7 @@ namespace Execution{
         observables_with_weights->add(*nsig_sw);
 
         TFile data_file(dataTuplePath, "READ");
-        TTree * data_tree = data_file.Get<TTree>("DTree");
+        TTree * data_tree = data_file.Get<TTree>("DecayTree");
         // Use vector storage for the data so that TTree is copied to memory
         RooAbsData::setDefaultStorageType(RooAbsData::Vector);
         std::unique_ptr<RooDataSet> temp_data = std::make_unique<RooDataSet>(
